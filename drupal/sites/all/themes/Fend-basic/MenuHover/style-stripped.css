@@ -1,0 +1,49 @@
+/* CSS Document */
+
+body {   behavior:url(csshover.htc); }
+p a {
+	color: #000;
+	text-decoration:underline!important;
+
+}
+a{
+	text-decoration:none;
+	}
+p a:hover{	text-decoration: none!important;
+}
+
+
+
+ul#nav {
+list-style: none;
+padding: 0;
+margin: 0;
+}
+
+ul#nav li, ul#nav li ul li{
+float: left;
+position: relative;
+width: 100px;
+}
+
+ul#nav li a {
+display: block;
+}
+
+li ul {
+display: none;
+position: absolute;
+width:100px;
+top: 0;
+left: 0;
+margin-left:-1px;
+}
+
+li>ul {
+top: auto;
+left: auto;
+}
+
+li:hover ul, li.over ul {
+display: block;
+}

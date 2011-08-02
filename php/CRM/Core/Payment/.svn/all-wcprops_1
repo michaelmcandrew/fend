@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/protx-civicrm/!svn/ver/1/CRM/Core/Payment
+END
+ProtXResult.php
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/protx-civicrm/!svn/ver/1/CRM/Core/Payment/ProtXResult.php
+END
+ProtX.php
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/protx-civicrm/!svn/ver/1/CRM/Core/Payment/ProtX.php
+END
+BaseProtXResult.php
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/protx-civicrm/!svn/ver/1/CRM/Core/Payment/BaseProtXResult.php
+END
