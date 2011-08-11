@@ -1,5 +1,4 @@
 <?php
-// $Id: views_plugin_row_node_rss.inc,v 1.7 2009/06/02 20:14:43 merlinofchaos Exp $
 /**
  * @file
  * Contains the node RSS row style plugin.
@@ -13,6 +12,9 @@ class views_plugin_row_node_rss extends views_plugin_row {
   // Basic properties that let the row style follow relationships.
   var $base_table = 'node';
   var $base_field = 'nid';
+
+  // Stores the nodes loaded with pre_render.
+  var $nodes = array();
 
   function option_definition() {
     $options = parent::option_definition();
@@ -28,14 +30,37 @@ class views_plugin_row_node_rss extends views_plugin_row {
     $form['item_length'] = array(
       '#type' => 'select',
       '#title' => t('Display type'),
-      '#options' => array(
-        'fulltext' => t('Full text'),
-        'teaser' => t('Title plus teaser'),
-        'title' => t('Title only'),
-        'default' => t('Use default RSS settings'),
-      ),
+      '#options' => $this->options_form_summary_options(),
       '#default_value' => $this->options['item_length'],
     );
+  }
+
+  /**
+   * Return the main options, which are shown in the summary title.
+   */
+  function options_form_summary_options() {
+    return array(
+      'fulltext' => t('Full text'),
+      'teaser' => t('Title plus teaser'),
+      'title' => t('Title only'),
+      'default' => t('Use default RSS settings'),
+    );
+  }
+
+  function summary_title() {
+    $options = $this->options_form_summary_options();
+    return check_plain($options[$this->options['item_length']]);
+  }
+
+
+  function pre_render($values) {
+    $nids = array();
+    foreach ($values as $row) {
+      $nids[] = $row->{$this->field_alias};
+    }
+    if (!empty($nids)) {
+      $this->nodes = node_load_multiple($nids);
+    }
   }
 
   function render($row) {
@@ -53,88 +78,48 @@ class views_plugin_row_node_rss extends views_plugin_row {
     }
 
     // Load the specified node:
-    $node = node_load($nid);
+    $node = $this->nodes[$nid];
     if (empty($node)) {
       return;
     }
 
-    $node->build_mode = NODE_BUILD_RSS;
+    $item_text = '';
 
-    if ($item_length != 'title') {
-      $teaser = ($item_length == 'teaser') ? TRUE : FALSE;
-
-      // Filter and prepare node teaser
-      if (node_hook($node, 'view')) {
-        $node = node_invoke($node, 'view', $teaser, FALSE);
-      }
-      else {
-        $node = node_prepare($node, $teaser);
-      }
-
-      // Allow modules to change $node->teaser before viewing.
-      node_invoke_nodeapi($node, 'view', $teaser, FALSE);
-    }
-
-    // Set the proper node part, then unset unused $node part so that a bad
-    // theme can not open a security hole.
-    $content = drupal_render($node->content);
-    if ($teaser) {
-      $node->teaser = $content;
-      unset($node->body);
-    }
-    else {
-      $node->body = $content;
-      unset($node->teaser);
-    }
-
-    // Allow modules to modify the fully-built node.
-    node_invoke_nodeapi($node, 'alter', $teaser, FALSE);
-
-    $item = new stdClass();
-    $item->title = $node->title;
-    $item->link = url("node/$row->nid", array('absolute' => TRUE));
-
-    // Allow modules to add additional item fields and/or modify $item
-    $extra = node_invoke_nodeapi($node, 'rss item');
-    $item->elements = array_merge($extra,
-      array(
-        array('key' => 'pubDate', 'value' => gmdate('r', $node->created)),
-        array(
-          'key' => 'dc:creator',
-          'value' => $node->name,
-          'namespace' => array('xmlns:dc' => 'http://purl.org/dc/elements/1.1/'),
-        ),
-        array(
-          'key' => 'guid',
-          'value' => $node->nid . ' at ' . $base_url,
-          'attributes' => array('isPermaLink' => 'false')
-        ),
-      )
+    $node->rss_namespaces = array('xmlns:dc' => 'http://purl.org/dc/elements/1.1/');
+    $node->rss_elements = array(
+      array('key' => 'pubDate', 'value' => gmdate('r', $node->created)),
+      array('key' => 'dc:creator', 'value' => $node->name),
+      array('key' => 'guid', 'value' => $node->nid . ' at ' . $base_url, 'attributes' => array('isPermaLink' => 'false'))
     );
 
-    foreach ($item->elements as $element) {
-      if (isset($element['namespace'])) {
-        $this->view->style_plugin->namespaces = array_merge($this->view->style_plugin->namespaces, $element['namespace']);
-      }
+    // The node gets built and modules add to or modify $node->rss_elements
+    // and $node->rss_namespaces.
+    node_build_content($node, 'rss');
+
+    $this->view->style_plugin->namespaces = array_merge($this->view->style_plugin->namespaces, $node->rss_namespaces);
+
+    if ($item_length != 'title' && !empty($node->content)) {
+      // We render node contents and force links to be last.
+      $links = drupal_render($node->content['links']);
+      $item_text .= drupal_render($node->content) . $links;
     }
 
-    // Prepare the item description
-    switch ($item_length) {
-      case 'fulltext':
-        $item->description = $node->body;
-        break;
-      case 'teaser':
-        $item->description = $node->teaser;
-        if (!empty($item->readmore)) {
-          $item->description .= '<p>' . l(t('read more'), 'node/' . $item->nid, array('absolute' => TRUE, 'attributes' => array('target' => '_blank'))) . '</p>';
-        }
-        break;
-      case 'title':
-        $item->description = '';
-        break;
+    $item = new stdClass;
+    $item->description = $item_text;
+    $item->title = $node->title;
+    $item->link = url("node/$node->nid", array('absolute' => TRUE));
+    $item->elements = $node->rss_elements;
+    $item->nid = $node->nid;
+    if (isset($node->readmore)) {
+      $item->readmore = $node->readmore;
     }
 
-    return theme($this->theme_functions(), $this->view, $this->options, $item);
+    return theme($this->theme_functions(),
+      array(
+        'view' => $this->view,
+        'options' => $this->options,
+        'row' => $item
+      ));
   }
 }
 

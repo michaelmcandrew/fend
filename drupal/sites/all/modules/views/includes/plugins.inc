@@ -1,34 +1,30 @@
 <?php
-// $Id: plugins.inc,v 1.154 2009/06/02 20:22:19 merlinofchaos Exp $
 /**
  * @file plugins.inc
  * Built in plugins for Views output handling.
  *
  */
 
+// @todo: Remove this once update.php can use the registry
+views_include('base');
+
 /**
- * Implementation of hook_views_plugins
+ * Implements hook_views_plugins
  */
 function views_views_plugins() {
-  $path = drupal_get_path('module', 'views') . '/js';
-  return array(
-    'module' => 'views', // This just tells our themes are elsewhere.
+  $js_path = drupal_get_path('module', 'ctools') . '/js';
+  $plugins = array(
+    // display, style, row, argument default, argument validator and access.
     'display' => array(
-      'parent' => array(
-        // this isn't really a display but is necessary so the file can
-        // be included.
-        'no ui' => TRUE,
-        'handler' => 'views_plugin_display',
-        'parent' => '',
-      ),
+      // Default settings for all display plugins.
       'default' => array(
-        'title' => t('Defaults'),
+        'title' => t('Master'),
         'help' => t('Default settings for this view.'),
         'handler' => 'views_plugin_display_default',
         'theme' => 'views_view',
         'no ui' => TRUE,
         'no remove' => TRUE,
-        'js' => array('misc/collapse.js', 'misc/textarea.js', 'misc/tabledrag.js', 'misc/autocomplete.js', "$path/dependent.js"),
+        'js' => array('misc/form.js', 'misc/collapse.js', 'misc/textarea.js', 'misc/tabledrag.js', 'misc/autocomplete.js', "$js_path/dependent.js"),
         'use ajax' => TRUE,
         'use pager' => TRUE,
         'use more' => TRUE,
@@ -41,6 +37,7 @@ function views_views_plugins() {
         'handler' => 'views_plugin_display_page',
         'theme' => 'views_view',
         'uses hook menu' => TRUE,
+        'contextual links locations' => array('page'),
         'use ajax' => TRUE,
         'use pager' => TRUE,
         'accept attachments' => TRUE,
@@ -53,6 +50,7 @@ function views_views_plugins() {
         'handler' => 'views_plugin_display_block',
         'theme' => 'views_view',
         'uses hook block' => TRUE,
+        'contextual links locations' => array('block'),
         'use ajax' => TRUE,
         'use pager' => TRUE,
         'use more' => TRUE,
@@ -65,14 +63,17 @@ function views_views_plugins() {
         'help' => t('Attachments added to other displays to achieve multiple views in the same view.'),
         'handler' => 'views_plugin_display_attachment',
         'theme' => 'views_view',
+        'contextual links locations' => array(),
         'use ajax' => TRUE,
+        'use pager' => FALSE,
+        'use more' => TRUE,
+        'accept attachments' => FALSE,
         'help topic' => 'display-attachment',
       ),
       'feed' => array(
         'title' => t('Feed'),
         'help' => t('Display the view as a feed, such as an RSS feed.'),
         'handler' => 'views_plugin_display_feed',
-        'parent' => 'page', // so it knows to load the page plugin .inc file
         'uses hook menu' => TRUE,
         'use ajax' => FALSE,
         'use pager' => FALSE,
@@ -81,31 +82,36 @@ function views_views_plugins() {
         'help topic' => 'display-feed',
       ),
     ),
-    'style' => array(
-      'parent' => array(
-        // this isn't really a display but is necessary so the file can
-        // be included.
-        'no ui' => TRUE,
-        'handler' => 'views_plugin_style',
-        'parent' => '',
-      ),
+    'display_extender' => array(
+      // Default settings for all display_extender plugins.
       'default' => array(
-        'title' => t('Unformatted'),
+        'title' => t('Empty display extender'),
+        'help' => t('Default settings for this view.'),
+        'handler' => 'views_plugin_display_extender',
+        'no ui' => TRUE,
+      ),
+    ),
+    'style' => array(
+      // Default settings for all style plugins.
+      'default' => array(
+        'title' => t('Unformatted list'),
         'help' => t('Displays rows one after another.'),
         'handler' => 'views_plugin_style_default',
         'theme' => 'views_view_unformatted',
         'uses row plugin' => TRUE,
-        'uses options' => TRUE,
+        'uses row class' => TRUE,
         'uses grouping' => TRUE,
+        'uses options' => TRUE,
         'type' => 'normal',
         'help topic' => 'style-unformatted',
       ),
       'list' => array(
-        'title' => t('HTML List'),
+        'title' => t('HTML list'),
         'help' => t('Displays rows as an HTML list.'),
         'handler' => 'views_plugin_style_list',
         'theme' => 'views_view_list',
         'uses row plugin' => TRUE,
+        'uses row class' => TRUE,
         'uses options' => TRUE,
         'type' => 'normal',
         'help topic' => 'style-list',
@@ -116,6 +122,7 @@ function views_views_plugins() {
         'handler' => 'views_plugin_style_grid',
         'theme' => 'views_view_grid',
         'uses row plugin' => TRUE,
+        'uses row class' => TRUE,
         'uses options' => TRUE,
         'type' => 'normal',
         'help topic' => 'style-grid',
@@ -126,6 +133,7 @@ function views_views_plugins() {
         'handler' => 'views_plugin_style_table',
         'theme' => 'views_view_table',
         'uses row plugin' => FALSE,
+        'uses row class' => TRUE,
         'uses fields' => TRUE,
         'uses options' => TRUE,
         'type' => 'normal',
@@ -144,7 +152,6 @@ function views_views_plugins() {
         'title' => t('Unformatted'),
         'help' => t('Displays the summary unformatted, with option for one after another or inline.'),
         'handler' => 'views_plugin_style_summary_unformatted',
-        'parent' => 'default_summary',
         'theme' => 'views_view_summary_unformatted',
         'type' => 'summary', // only shows up as a summary style
         'uses options' => TRUE,
@@ -162,13 +169,6 @@ function views_views_plugins() {
       ),
     ),
     'row' => array(
-      'parent' => array(
-        // this isn't really a display but is necessary so the file can
-        // be included.
-        'no ui' => TRUE,
-        'handler' => 'views_plugin_row',
-        'parent' => '',
-      ),
       'fields' => array(
         'title' => t('Fields'),
         'help' => t('Displays the fields with an optional template.'),
@@ -181,24 +181,25 @@ function views_views_plugins() {
       ),
     ),
     'argument default' => array(
-      // This type of plugin does not conform to the standard and
-      // uses 'fixed' as the parent rather than having a separate parent.
-      'fixed' => array(
-        'title' => t('Fixed entry'),
+      'parent' => array(
+        'no ui' => TRUE,
         'handler' => 'views_plugin_argument_default',
+        'parent' => '',
+      ),
+      'fixed' => array(
+        'title' => t('Fixed value'),
+        'handler' => 'views_plugin_argument_default_fixed',
       ),
       'php' => array(
         'title' => t('PHP Code'),
         'handler' => 'views_plugin_argument_default_php',
-        'parent' => 'fixed',
+      ),
+      'raw' => array(
+        'title' => t('Raw value from URL'),
+        'handler' => 'views_plugin_argument_default_raw',
       ),
     ),
     'argument validator' => array(
-      'parent' => array(
-        'no ui' => TRUE,
-        'handler' => 'views_plugin_argument_validate',
-        'parent' => '',
-      ),
       'php' => array(
         'title' => t('PHP Code'),
         'handler' => 'views_plugin_argument_validate_php',
@@ -209,11 +210,6 @@ function views_views_plugins() {
       ),
     ),
     'access' => array(
-      'parent' => array(
-        'no ui' => TRUE,
-        'handler' => 'views_plugin_access',
-        'parent' => '',
-      ),
       'none' => array(
         'title' => t('None'),
         'help' => t('Will be available to all users.'),
@@ -233,6 +229,18 @@ function views_views_plugins() {
         'handler' => 'views_plugin_access_perm',
         'uses options' => TRUE,
         'help topic' => 'access-perm',
+      ),
+    ),
+    'query' => array(
+      'parent' => array(
+        'no ui' => TRUE,
+        'handler' => 'views_plugin_query',
+        'parent' => '',
+      ),
+      'views_query' => array(
+        'title' => t('SQL Query'),
+        'help' => t('Query will be generated and run using the Drupal database API.'),
+        'handler' => 'views_plugin_query_default'
       ),
     ),
     'cache' => array(
@@ -255,7 +263,116 @@ function views_views_plugins() {
         'help topic' => 'cache-time',
       ),
     ),
+    'exposed_form' => array(
+      'parent' => array(
+        'no ui' => TRUE,
+        'handler' => 'views_plugin_exposed_form',
+        'parent' => '',
+      ),
+      'basic' => array(
+        'title' => t('Basic'),
+        'help' => t('Basic exposed form'),
+        'handler' => 'views_plugin_exposed_form_basic',
+        'uses options' => TRUE,
+        'help topic' => 'exposed-form-basic',
+      ),
+      'input_required' => array(
+        'title' => t('Input required'),
+        'help' => t('An exposed form that only renders a view if the form contains user input.'),
+        'handler' => 'views_plugin_exposed_form_input_required',
+        'uses options' => TRUE,
+        'help topic' => 'exposed-form-input-required',
+      ),
+    ),
+    'pager' => array(
+      'parent' => array(
+        'no ui' => TRUE,
+        'handler' => 'views_plugin_pager',
+        'parent' => '',
+      ),
+      'none' => array(
+        'title' => t('Display all items'),
+        'help' => t("Display all items that this view might find"),
+        'handler' => 'views_plugin_pager_none',
+        'help topic' => 'pager-none',
+        'uses options' => TRUE,
+        'type' => 'basic',
+      ),
+      'some' => array(
+        'title' => t('Display a specified number of items'),
+        'help' => t('Display a limited number items that this view might find.'),
+        'handler' => 'views_plugin_pager_some',
+        'help topic' => 'pager-some',
+        'uses options' => TRUE,
+        'type' => 'basic',
+      ),
+      'full' => array(
+        'title' => t('Paged output, full pager'),
+        'short title' => t('Full'),
+        'help' => t('Paged output, full Drupal style'),
+        'handler' => 'views_plugin_pager_full',
+        'help topic' => 'pager-full',
+        'uses options' => TRUE,
+      ),
+      'mini' => array(
+        'title' => t('Paged output, mini pager'),
+        'short title' => t('Mini'),
+        'help' => t('Use the mini pager output.'),
+        'handler' => 'views_plugin_pager_mini',
+        'help topic' => 'pager-mini',
+        'uses options' => TRUE,
+        'parent' => 'full',
+      ),
+    ),
+    'localization' => array(
+      'parent' => array(
+        'no ui' => TRUE,
+        'handler' => 'views_plugin_localization',
+        'parent' => '',
+      ),
+     'none' => array(
+        'title' => t('None'),
+        'help' => t('Do not pass admin strings for translation.'),
+        'handler' => 'views_plugin_localization_none',
+        'help topic' => 'localization-none',
+      ),
+      'core' => array(
+        'title' => t('Core'),
+        'help' => t("Use Drupal core t() function. Not recommended, as it doesn't support updates to existing strings."),
+        'handler' => 'views_plugin_localization_core',
+        'help topic' => 'localization-core',
+      ),
+    ),
   );
+  // Add a help message pointing to the i18views module if it is not present.
+  if (!module_exists('i18nviews')) {
+    $plugins['localization']['core']['help'] .= ' ' . t('If you need to translate Views labels into other languages, consider installing the <a href="!path">Internationalization</a> package\'s Views translation module.', array('!path' => url('http://drupal.org/project/i18n', array('absolute' => TRUE))));
+  }
+
+  if (module_invoke('ctools', 'api_version', '1.3')) {
+    $plugins['style']['jump_menu_summary'] = array(
+      'title' => t('Jump menu'),
+      'help' => t('Puts all of the results into a select box and allows the user to go to a different page based upon the results.'),
+      'handler' => 'views_plugin_style_summary_jump_menu',
+      'theme' => 'views_view_summary_jump_menu',
+      'type' => 'summary', // only shows up as a summary style
+      'uses options' => TRUE,
+      'help topic' => 'style-summary-jump-menu',
+    );
+    $plugins['style']['jump_menu'] = array(
+      'title' => t('Jump menu'),
+      'help' => t('Puts all of the results into a select box and allows the user to go to a different page based upon the results.'),
+      'handler' => 'views_plugin_style_jump_menu',
+      'theme' => 'views_view_jump_menu',
+      'uses row plugin' => TRUE,
+      'uses fields' => TRUE,
+      'uses options' => TRUE,
+      'type' => 'normal',
+      'help topic' => 'style-jump-menu',
+    );
+  }
+
+  return $plugins;
 }
 
 /**
@@ -264,7 +381,7 @@ function views_views_plugins() {
  * @return Nested array of plugins, grouped by type.
  */
 function views_discover_plugins() {
-  $cache = array('display' => array(), 'style' => array(), 'row' => array(), 'argument default' => array(), 'argument validator' => array(), 'access' => array(), 'cache' => array());
+  $cache = array('display' => array(), 'style' => array(), 'row' => array(), 'argument default' => array(), 'argument validator' => array(), 'access' => array(), 'cache' => array(), 'exposed_form' => array());
   // Get plugins from all mdoules.
   foreach (module_implements('views_plugins') as $module) {
     $function = $module . '_views_plugins';
@@ -311,6 +428,9 @@ function views_discover_plugins() {
       }
     }
   }
+
+  // Let other modules modify the plugins.
+  drupal_alter('views_plugins', $cache);
   return $cache;
 }
 
@@ -319,13 +439,23 @@ function views_discover_plugins() {
  */
 class views_plugin extends views_object {
   /**
+   * The top object of a view.
+   *
+   * @var view
+   */
+  var $view = NULL;
+
+  /**
+   * The current used display plugin.
+   *
+   * @var views_plugin_display
+   */
+  var $display = NULL;
+
+  /**
    * Init will be called after construct, when the plugin is attached to a
    * view and a display.
    */
-  function init(&$view, &$display) {
-    $this->view = &$view;
-    $this->display = &$display;
-  }
 
   /**
    * Provide a form to edit options for this plugin.
@@ -375,5 +505,22 @@ class views_plugin extends views_object {
    *   plugin.
    */
   function validate() { return array(); }
-}
 
+  /**
+   * Returns the summary of the settings in the display.
+   */
+  function summary_title() {
+    return t('Settings');
+  }
+  /**
+   * Return the human readable name of the display.
+   *
+   * This appears on the ui beside each plugin and beside the settings link.
+   */
+  function plugin_title() {
+    if (isset($this->definition['short title'])) {
+      return check_plain($this->definition['short title']);
+    }
+    return check_plain($this->definition['title']);
+  }
+}

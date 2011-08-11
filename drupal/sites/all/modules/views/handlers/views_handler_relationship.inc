@@ -1,5 +1,4 @@
 <?php
-// $Id: views_handler_relationship.inc,v 1.3 2009/06/04 20:09:26 merlinofchaos Exp $
 /**
  * @file
  * Views' relationship handlers.
@@ -23,11 +22,11 @@
  * - base: The new base table this relationship will be adding. This does not
  *   have to be a declared base table, but if there are no tables that
  *   utilize this base table, it won't be very effective.
- * - base field: The field to use in the relationship; if left out this iwll be
+ * - base field: The field to use in the relationship; if left out this will be
  *   assumed to be the primary field.
  * - relationship table: The actual table this relationship operates against.
  *   This is analogous to using a 'table' override.
- * - relationship field: The actual field this relationsihp operates against.
+ * - relationship field: The actual field this relationship operates against.
  *   This is analogous to using a 'real field' override.
  * - label: The default label to provide for this relationship, which is
  *   shown in parentheses next to any field/sort/filter/argument that uses
@@ -38,7 +37,7 @@ class views_handler_relationship extends views_handler {
    * Init handler to let relationships live on tables other than
    * the table they operate on.
    */
-  function init(&$view, $options) {
+  function init(&$view, &$options) {
     parent::init($view, $options);
     if (isset($this->definition['relationship table'])) {
       $this->table = $this->definition['relationship table'];
@@ -73,17 +72,18 @@ class views_handler_relationship extends views_handler {
    * should have.
    */
   function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
     $form['label'] = array(
       '#type' => 'textfield',
-      '#title' => t('Label'),
+      '#title' => t('Identifier'),
       '#default_value' => isset($this->options['label']) ? $this->options['label'] : '',
-      '#description' => t('The label for this relationship that will be displayed only administratively.'),
+      '#description' => t('Edit the administrative label displayed when referencing this relationship form filters, etc.'),
     );
 
     $form['required'] = array(
       '#type' => 'checkbox',
       '#title' => t('Require this relationship'),
-      '#description' => t('If required, items that do not contain this relationship will not appear.'),
+      '#description' => t('Enable to hide items that do not contain this relationship'),
       '#default_value' => !empty($this->options['required']),
     );
   }
@@ -115,6 +115,7 @@ class views_handler_relationship extends views_handler {
     }
 
     $join->definition = $def;
+    $join->options = $this->options;
     $join->construct();
     $join->adjusted = TRUE;
 
@@ -123,13 +124,20 @@ class views_handler_relationship extends views_handler {
 
     $this->alias = $this->query->add_relationship($alias, $join, $this->definition['base'], $this->relationship);
   }
+
+  /**
+   * You can't groupby a relationship.
+   */
+  function use_group_by() {
+    return FALSE;
+  }
 }
 
 /**
  * A special handler to take the place of missing or broken handlers.
  */
 class views_handler_relationship_broken extends views_handler_relationship {
-  function ui_name() {
+  function ui_name($short = FALSE) {
     return t('Broken/missing handler');
   }
 
@@ -137,8 +145,7 @@ class views_handler_relationship_broken extends views_handler_relationship {
   function query() { /* No query to run */ }
   function options_form(&$form, &$form_state) {
     $form['markup'] = array(
-      '#prefix' => '<div class="form-item description">',
-      '#value' => t('The handler for this item is broken or missing and cannot be used. If a module provided the handler and was disabled, re-enabling the module may restore it. Otherwise, you should probably delete this item.'),
+      '#markup' => '<div class="form-item description">' . t('The handler for this item is broken or missing and cannot be used. If a module provided the handler and was disabled, re-enabling the module may restore it. Otherwise, you should probably delete this item.') . '</div>',
     );
   }
 

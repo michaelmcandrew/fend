@@ -1,5 +1,4 @@
 <?php
-// $Id: views_plugin_display_attachment.inc,v 1.4 2009/05/20 02:53:30 merlinofchaos Exp $
 /**
  * @file
  * Contains the attachment display plugin.
@@ -18,10 +17,12 @@ class views_plugin_display_attachment extends views_plugin_display {
   function option_definition () {
     $options = parent::option_definition();
 
+    $options['displays'] = array('default' => array());
     $options['attachment_position'] = array('default' => 'before');
     $options['inherit_arguments'] = array('default' => TRUE);
     $options['inherit_exposed_filters'] = array('default' => FALSE);
-    $options['displays'] = array('default' => array());
+    $options['inherit_pager'] = array('default' => FALSE);
+    $options['render_pager'] = array('default' => FALSE);
 
     return $options;
   }
@@ -55,11 +56,42 @@ class views_plugin_display_attachment extends views_plugin_display {
 
     $categories['attachment'] = array(
       'title' => t('Attachment settings'),
+      'column' => 'second',
+      'build' => array(
+        '#weight' => -10,
+      ),
+    );
+
+    $displays = array_filter($this->get_option('displays'));
+    if (count($displays) > 1) {
+      $attach_to = t('Multiple displays');
+    }
+    elseif (count($displays) == 1) {
+      $display = array_shift($displays);
+      if (!empty($this->view->display[$display])) {
+        $attach_to = check_plain($this->view->display[$display]->display_title);
+      }
+    }
+
+    if (!isset($attach_to)) {
+      $attach_to = t('Not defined');
+    }
+
+    $options['displays'] = array(
+      'category' => 'attachment',
+      'title' => t('Attach to'),
+      'value' => $attach_to,
+    );
+
+    $options['attachment_position'] = array(
+      'category' => 'attachment',
+      'title' => t('Attachment position'),
+      'value' => $this->attachment_positions($this->get_option('attachment_position')),
     );
 
     $options['inherit_arguments'] = array(
       'category' => 'attachment',
-      'title' => t('Inherit arguments'),
+      'title' => t('Inherit contextual filters'),
       'value' => $this->get_option('inherit_arguments') ? t('Yes') : t('No'),
     );
 
@@ -69,32 +101,18 @@ class views_plugin_display_attachment extends views_plugin_display {
       'value' => $this->get_option('inherit_exposed_filters') ? t('Yes') : t('No'),
     );
 
-    $options['attachment_position'] = array(
-      'category' => 'attachment',
-      'title' => t('Position'),
-      'value' => $this->attachment_positions($this->get_option('attachment_position')),
+    $options['inherit_pager'] = array(
+      'category' => 'pager',
+      'title' => t('Inherit pager'),
+      'value' => $this->get_option('inherit_pager') ? t('Yes') : t('No'),
     );
 
-    $displays = array_filter($this->get_option('displays'));
-    if (count($displays) > 1) {
-      $attach_to = t('Multiple displays');
-    }
-    else if (count($displays) == 1) {
-      $display = array_shift($displays);
-      if (!empty($this->view->display[$display])) {
-        $attach_to = check_plain($this->view->display[$display]->display_title);
-      }
-    }
-
-    if (!isset($attach_to)) {
-      $attach_to = t('None');
-    }
-
-    $options['displays'] = array(
-      'category' => 'attachment',
-      'title' => t('Attach to'),
-      'value' => $attach_to,
+    $options['render_pager'] = array(
+      'category' => 'pager',
+      'title' => t('Render pager'),
+      'value' => $this->get_option('render_pager') ? t('Yes') : t('No'),
     );
+
   }
 
   /**
@@ -106,11 +124,11 @@ class views_plugin_display_attachment extends views_plugin_display {
 
     switch ($form_state['section']) {
       case 'inherit_arguments':
-        $form['#title'] .= t('Inherit arguments');
+        $form['#title'] .= t('Inherit contextual filters');
         $form['inherit_arguments'] = array(
           '#type' => 'checkbox',
           '#title' => t('Inherit'),
-          '#description' => t('Should this display inherit its arguments from the parent display to which it is attached?'),
+          '#description' => t('Should this display inherit its contextual filter values from the parent display to which it is attached?'),
           '#default_value' => $this->get_option('inherit_arguments'),
         );
         break;
@@ -121,6 +139,24 @@ class views_plugin_display_attachment extends views_plugin_display {
           '#title' => t('Inherit'),
           '#description' => t('Should this display inherit its exposed filter values from the parent display to which it is attached?'),
           '#default_value' => $this->get_option('inherit_exposed_filters'),
+        );
+        break;
+      case 'inherit_pager':
+        $form['#title'] .= t('Inherit pager');
+        $form['inherit_pager'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Inherit'),
+          '#description' => t('Should this display inherit its paging values from the parent display to which it is attached?'),
+          '#default_value' => $this->get_option('inherit_pager'),
+        );
+        break;
+      case 'render_pager':
+        $form['#title'] .= t('Render pager');
+        $form['render_pager'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Render'),
+          '#description' => t('Should this display render the pager values? This is only meaningful if inheriting a pager.'),
+          '#default_value' => $this->get_option('render_pager'),
         );
         break;
       case 'attachment_position':
@@ -154,11 +190,13 @@ class views_plugin_display_attachment extends views_plugin_display {
    * Perform any necessary changes to the form values prior to storage.
    * There is no need for this function to actually store the data.
    */
-  function options_submit($form, &$form_state) {
+  function options_submit(&$form, &$form_state) {
     // It is very important to call the parent function here:
     parent::options_submit($form, $form_state);
     switch ($form_state['section']) {
       case 'inherit_arguments':
+      case 'inherit_pager':
+      case 'render_pager':
       case 'inherit_exposed_filters':
       case 'attachment_position':
       case 'displays':
@@ -177,6 +215,10 @@ class views_plugin_display_attachment extends views_plugin_display {
       return;
     }
 
+    if (!$this->access()) {
+      return;
+    }
+
     // Get a fresh view because our current one has a lot of stuff on it because it's
     // already been executed.
     $view = $this->view->clone_view();
@@ -184,9 +226,12 @@ class views_plugin_display_attachment extends views_plugin_display {
 
     $args = $this->get_option('inherit_arguments') ? $this->view->args : array();
     $view->set_arguments($args);
+    $view->set_display($this->display->id);
+    if ($this->get_option('inherit_pager')) {
+      $view->display_handler->use_pager = $this->view->display[$display_id]->handler->use_pager();
+      $view->display_handler->set_option('pager', $this->view->display[$display_id]->handler->get_option('pager'));
+    }
 
-    // because of this, it is very very important that displays that can accept
-    // attachments not also be attachments, or this could explode messily.
     $attachment = $view->execute_display($this->display->id, $args);
 
     switch ($this->get_option('attachment_position')) {
@@ -224,5 +269,13 @@ class views_plugin_display_attachment extends views_plugin_display {
    */
   function displays_exposed() {
     return $this->options['inherit_exposed_filters'] ? FALSE : TRUE;
+  }
+
+  function use_pager() {
+    return !empty($this->use_pager);
+  }
+
+  function render_pager() {
+    return !empty($this->use_pager) && $this->get_option('render_pager');
   }
 }

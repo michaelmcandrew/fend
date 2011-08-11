@@ -1,29 +1,72 @@
 <?php
-// $Id: admin_menu.test,v 1.1.2.7 2009/04/26 22:23:20 davereid Exp $
+// $Id: admin_menu.test,v 1.15 2010/02/20 02:17:55 sun Exp $
 
 /**
  * @file
  * Administration menu functionality tests.
- *
- * Note: When using $this->assertPattern(), be sure to use the 's' modifier for
- * the PCRE pattern, since admin menu's output spans over multiple lines.
  */
 
+/**
+ * Base class for all administration menu web test cases.
+ */
+class AdminMenuWebTestCase extends DrupalWebTestCase {
+  function setUp() {
+    // Enable admin menu module and any other modules.
+    $args = func_get_args();
+    call_user_func_array(array($this, 'parent::setUp'), array_merge(array('admin_menu'), $args));
+
+    // Disable client-side caching.
+    variable_set('admin_menu_cache_client', FALSE);
+  }
+
+  /**
+   * Check that an element exists in HTML markup.
+   *
+   * @param $xpath
+   *   An XPath expression.
+   * @param $message
+   *   The message to display along with the assertion.
+   * @param $group
+   *   The type of assertion - examples are "Browser", "PHP".
+   * @return
+   *   TRUE if the assertion succeeded, FALSE otherwise.
+   */
+  protected function assertElementByXPath($xpath, $message, $group = 'Other') {
+    return $this->assertTrue($this->xpath($xpath), $message, $group);
+  }
+
+  /**
+   * Check that an element does not exist in HTML markup.
+   *
+   * @param $xpath
+   *   An XPath expression.
+   * @param $message
+   *   The message to display along with the assertion.
+   * @param $group
+   *   The type of assertion - examples are "Browser", "PHP".
+   * @return
+   *   TRUE if the assertion succeeded, FALSE otherwise.
+   */
+  protected function assertNoElementByXPath($xpath, $message, $group = 'Other') {
+    return $this->assertFalse($this->xpath($xpath), $message, $group);
+  }
+}
 
 /**
  * Test menu links depending on user permissions.
  */
-class AdminMenuPermissionsTestCase extends DrupalWebTestCase {
+class AdminMenuPermissionsTestCase extends AdminMenuWebTestCase {
   public static function getInfo() {
     return array(
-      'name' => t('Menu link permissions'),
-      'description' => t('Verify that menu is displayed according to user permissions.'),
-      'group' => t('Administration menu'),
+      'name' => 'Menu link permissions',
+      'description' => 'Verify that menu is displayed according to user permissions.',
+      'group' => 'Administration menu',
     );
   }
 
   function setUp() {
-    parent::setUp('admin_menu');
+    // Additionally enable contact module.
+    parent::setUp('contact');
   }
 
   /**
@@ -31,124 +74,98 @@ class AdminMenuPermissionsTestCase extends DrupalWebTestCase {
    */
   function testPermissions() {
     // Anonymous users should not see the menu.
-    $this->assertNoRaw('<div id="admin-menu">', t('Admin menu not displayed to anonymous.'));
+    $this->drupalGet('node');
+    $this->assertNoElementByXPath('//div[@id="admin-menu"]', t('Admin menu not displayed to anonymous.'));
 
     // Create a new user who can access administration menu, but without the
     // permission 'display drupal links'.
-    $admin_user = $this->drupalCreateUser(array('administer site configuration', 'access administration pages', 'administer nodes', 'access administration menu'));
+    $permissions = array('administer site configuration', 'access administration pages', 'access content overview', 'bypass node access', 'access administration menu');
+    // @see http://drupal.org/node/719964
+    if (module_exists('dashboard')) {
+      $permissions[] = 'access dashboard';
+    }
+    $admin_user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($admin_user);
 
     // Check that the user can see the admin links, but not the drupal links.
-    $this->assertRaw('<div id="admin-menu">', t('Administration menu is displayed.'));
+    $this->assertElementByXPath('//div[@id="admin-menu"]', t('Administration menu is displayed.'));
     $this->drupalGet('node');
-    $this->assertPattern('@<div id="admin-menu">.*admin/content/node@s', t('Administer content link found.'));
-    $this->assertNoPattern('@<div id="admin-menu">.*http://drupal.org@s', t('Drupal links not found.'));
-    $this->assertNoPattern('@<div id="admin-menu">.*admin/build/contact@s', t('Contact module link not found.'));
+    $this->assertElementByXPath('//div[@id="admin-menu"]//a[contains(@href, "/admin/content/node")]', t('Administer content link found.'));
+    $this->assertNoElementByXPath('//div[@id="admin-menu"]//a[@href="http://drupal.org"]', t('Drupal links not found.'));
+    $this->assertNoElementByXPath('//div[@id="admin-menu"]//a[contains(@href, "/admin/structure/contact")]', t('Contact module link not found.'));
 
     // Create a new user with the permission 'display drupal links'.
-    $admin_user2 = $this->drupalCreateUser(array('administer site configuration', 'access administration pages', 'administer nodes', 'access administration menu', 'display drupal links'));
+    $permissions = array('administer site configuration', 'access administration pages', 'access content overview', 'access administration menu', 'display drupal links', 'administer contact forms');
+    // @see http://drupal.org/node/719964
+    if (module_exists('dashboard')) {
+      $permissions[] = 'access dashboard';
+    }
+    $admin_user2 = $this->drupalCreateUser($permissions);
     $this->drupalLogin($admin_user2);
     $this->drupalGet('node');
-    $this->assertPattern('@<div id="admin-menu">.*http://drupal.org@s', t('Drupal links found.'));
-    $this->assertNoPattern('@<div id="admin-menu">.*admin/build/contact@s', t('Contact module link not found.'));
-  }
-}
-
-/**
- * Test menu links depending on installed modules.
- */
-class AdminMenuModulesTestCase extends DrupalWebTestCase {
-  public static function getInfo() {
-    return array(
-      'name' => t('Module menu links'),
-      'description' => t('Verify that menu contains links according to enabled modules.'),
-      'group' => t('Administration menu'),
-    );
-  }
-
-  function setUp() {
-    parent::setUp('admin_menu', 'contact');
-  }
-
-  /**
-   * Test that the links are added to the page (no JS testing).
-   */
-  function testContactModuleLinks() {
-    // Create a new user without 'administer site-wide contact form' permission.
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'access administration menu'));
-    $this->drupalLogin($admin_user);
-
-    // Verify that proper links are displayed.
-    $this->assertRaw('<div id="admin-menu">', t('Administration menu is displayed.'));
-    $this->drupalGet('node');
-    $this->assertNoPattern('@<div id="admin-menu">.*admin/build/contact@s', t('Contact module link not found.'));
-
-    // Create a new user with 'administer site-wide contact form' permission.
-    $admin_user = $this->drupalCreateUser(array('access administration pages', 'access administration menu', 'administer site-wide contact form'));
-    $this->drupalLogin($admin_user);
-
-    // Verify that proper links are displayed.
-    $this->drupalGet('node');
-    $this->assertPattern('@<div id="admin-menu">.*admin/build/contact@s', t('Contact module link found.'));
+    $this->assertElementByXPath('//div[@id="admin-menu"]//a[@href="http://drupal.org"]', t('Drupal links found.'));
+    $this->assertElementByXPath('//div[@id="admin-menu"]//a[contains(@href, "/admin/structure/contact")]', t('Contact module link found.'));
   }
 }
 
 /**
  * Test contained links in administration menu.
  */
-class AdminMenuLinksTestCase extends DrupalWebTestCase {
+class AdminMenuLinksTestCase extends AdminMenuWebTestCase {
   public static function getInfo() {
     return array(
-      'name' => t('Menu links'),
-      'description' => t('Verify that menu contains proper links.'),
-      'group' => t('Administration menu'),
+      'name' => 'Menu links',
+      'description' => 'Verify that admin menu contains proper links.',
+      'group' => 'Administration menu',
     );
   }
 
   function setUp() {
-    parent::setUp('admin_menu');
+    parent::setUp();
 
     // Create and log in a full-blown administrative user.
-    $permissions = module_invoke_all('perm');
-    $admin_user = $this->drupalCreateUser($permissions);
+    $permissions = module_invoke_all('permission');
+    $admin_user = $this->drupalCreateUser(array_keys($permissions));
     $this->admin_user = $this->drupalLogin($admin_user);
   }
 
   /**
    * Test link contents.
+   *
+   * @todo Disabled due to latest changes in HEAD.
+   *   @see http://drupal.org/node/420816
    */
-  function testLinkContents() {
+  function DISABLEDtestLinkContents() {
     // Create a content-type with special characters.
     $info = array(
       'type' => 'special',
       'name' => 'Cool & Special',
-      'module' => 'node',
-      'description' => '',
+      'base' => 'node_content',
     );
-    $info = (object)_node_type_set_defaults($info);
+    $info = (object) node_type_set_defaults($info);
     node_type_save($info);
     drupal_flush_all_caches();
 
     // Fetch a page.
     $this->drupalGet('node');
-    $this->assertRaw('<div id="admin-menu">', t('Administration menu is displayed.'));
+    $this->assertElementByXPath('//div[@id="admin-menu"]', t('Administration menu is displayed.'));
 
     // Verify that proper links are displayed.
     // We are explicitly NOT using t() here, since the purpose is to test our
     // custom link titles and 't' option.
     $links = array(
-      '/admin/content/node-type/page' => strtr('Edit !content-type', array('!content-type' => t('Page'))),
-      '/admin/content/node-type/special' => strtr('Edit !content-type', array('!content-type' => t('Cool & Special'))),
+      '/admin/structure/types/article' => t('Article'),
+      '/admin/structure/types/special' => t('Cool & Special'),
     );
     foreach ($links as $url => $title) {
-      $this->assertFieldByXPath('//div[@id="admin-menu"]//a[@href="' . $url . '"]', $title, t('!link-title content-type link found.', array('!link-title' => $title)));
+      $this->assertFieldByXPath('//div[@id="admin-menu"]//a[contains(@href, "' . $url . '")]', $title, t('!link-title content-type link found.', array('!link-title' => $title)));
     }
     $links = array(
-      '/node/add/page' => t('Page'),
+      '/node/add/article' => t('Article'),
       '/node/add/special' => t('Cool & Special'),
     );
     foreach ($links as $url => $title) {
-      $this->assertFieldByXPath('//div[@id="admin-menu"]//a[@href="' . $url . '"]', $title, t('Create content &raquo; !link-title link found.', array('!link-title' => $title)));
+      $this->assertFieldByXPath('//div[@id="admin-menu"]//a[contains(@href, "' . $url . '")]', $title, t('Create content &raquo; !link-title link found.', array('!link-title' => $title)));
     }
   }
 }

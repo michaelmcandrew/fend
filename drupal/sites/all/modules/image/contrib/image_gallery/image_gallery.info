@@ -1,4 +1,3 @@
-; $Id: image_gallery.info,v 1.5 2008/01/06 22:15:25 drewish Exp $
 name = Image Gallery
 description = Allows sorting and displaying of image galleries based on categories.
 package = Image
@@ -6,9 +5,9 @@ dependencies[] = image
 dependencies[] = taxonomy
 core = 6.x
 
-; Information added by drupal.org packaging script on 2009-07-11
-version = "6.x-1.0-alpha5"
-core = "6.x"
+; Information added by drupal.org packaging script on 2011-03-18
+version = "7.x-1.x-dev"
+core = "7.x"
 project = "image"
-datestamp = "1247351130"
+datestamp = "1300450017"
 

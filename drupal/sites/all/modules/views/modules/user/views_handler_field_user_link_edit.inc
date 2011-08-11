@@ -1,18 +1,22 @@
 <?php
-// $Id: views_handler_field_user_link_edit.inc,v 1.1 2008/09/03 19:21:30 merlinofchaos Exp $
 /**
  * Field handler to present a link to user edit.
  */
 class views_handler_field_user_link_edit extends views_handler_field_user_link {
-  // An example of field level access control.
-  function access() {
-    return user_access('administer users');
-  }
+  function render_link($data, $values) {
+    // Build a pseudo account object to be able to check the access.
+    $account = new stdClass();
+    $account->uid = $data;
 
-  function render($values) {
-    $text = !empty($this->options['text']) ? $this->options['text'] : t('edit');
-    $uid = $values->{$this->aliases['uid']};
-    return l($text, "user/$uid/edit", array('query' => drupal_get_destination()));
+    if ($data && user_edit_access($account)) {
+      $this->options['alter']['make_link'] = TRUE;
+
+      $text = !empty($this->options['text']) ? $this->options['text'] : t('edit');
+
+      $this->options['alter']['path'] = "user/$data/edit";
+      $this->options['alter']['query'] = drupal_get_destination();
+
+      return $text;
+    }
   }
 }
-

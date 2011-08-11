@@ -1,4 +1,3 @@
-/* $Id: README.txt,v 1.6 2008/10/28 22:46:05 sun Exp $ */
 
 -- SUMMARY --
 
@@ -6,9 +5,9 @@ Wysiwyg API allows to users of your site to use WYSIWYG/rich-text, and other
 client-side editors for editing contents.  This module depends on third-party
 editor libraries, most often based on JavaScript.
 
-For a full description visit the project page:
+For a full description of the module, visit the project page:
   http://drupal.org/project/wysiwyg
-Bug reports, feature suggestions and latest developments:
+To submit bug reports and feature suggestions, or to track changes:
   http://drupal.org/project/issues/wysiwyg
 
 
@@ -21,41 +20,30 @@ Bug reports, feature suggestions and latest developments:
 
 * Install as usual, see http://drupal.org/node/70151 for further information.
 
-* Go to Administer > Site configuration > Wysiwyg, and follow the displayed
-  installation instructions to download and install one of the supported
-  editors.
+* Go to Administration » Configuration » Content authoring » Wysiwyg,
+  and follow the displayed installation instructions to download and install one
+  of the supported editors.
 
 
 -- CONFIGURATION --
 
-* Go to Administer > Site configuration > Input formats and
+* Go to Administration » Configuration » Content authoring » Text formats, and
 
   - either configure the Full HTML format, assign it to trusted roles, and
     disable "HTML filter", "Line break converter", and (optionally) "URL filter".
 
-  - or add a new input format, assign it to trusted roles, and ensure that above
+  - or add a new text format, assign it to trusted roles, and ensure that above
     mentioned input filters are disabled.
 
-* Setup editor profiles in Administer > Site configuration > Wysiwyg.
+* Setup editor profiles in Administration » Configuration » Content authoring
+  » Wysiwyg.
 
 
 -- CONTACT --
 
 Current maintainers:
-* Daniel F. Kudwien (sun) - http://www.unleashedmind.com
-
-Previous maintainers:
-* Nathan Haug (quicksketch) - http://quicksketch.org
-* kreynen - http://drupal.org/user/48877
-* Allie Micka - http://drupal.org/user/15091
-* Theodore Serbinski (m3avrck) - http://drupal.org/user/12932
-* Nedjo Rogers (nedjo) - http://drupal.org/user/4481
-* Steve McKenzie - http://drupal.org/user/45890
-* ufku - http://drupal.org/user/9910
-* Matt Westgate - <drupal AT asitis DOT org> and
-* Jeff Robbins - <robbins AT jjeff DOT com>
-* Richard Bennett - <richard.b AT gritechnologies DOT com>
-
+* Daniel F. Kudwien (sun) - http://drupal.org/user/54136
+* Henrik Danielsson (TwoD) - http://drupal.org/user/244227
 
 This project has been sponsored by:
 * UNLEASHED MIND

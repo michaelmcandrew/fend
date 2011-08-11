@@ -1,12 +1,11 @@
-// $Id: INSTALL.mysql.txt,v 1.10 2007/11/19 19:53:51 goba Exp $
 
 CREATE THE MySQL DATABASE
 --------------------------
 
-This step is only necessary if you don't already have a database set-up (e.g. by
-your host). In the following examples, 'username' is an example MySQL user which
-has the CREATE and GRANT privileges. Use the appropriate user name for your
-system.
+This step is only necessary if you don't already have a database set up (e.g.,
+by your host). In the following examples, 'username' is an example MySQL user
+which has the CREATE and GRANT privileges. Use the appropriate user name for
+your system.
 
 First, you must create a new database for your Drupal site (here, 'databasename'
 is the name of the new database):
@@ -14,7 +13,7 @@ is the name of the new database):
   mysqladmin -u username -p create databasename
 
 MySQL will prompt for the 'username' database password and then create the
-initial database files. Next you must login and set the access database rights:
+initial database files. Next you must log in and set the access database rights:
 
   mysql -u username -p
 
@@ -38,3 +37,6 @@ If successful, MySQL will reply with:
 
   Query OK, 0 rows affected
 
+If the InnoDB storage engine is available, it will be used for all database
+tables. InnoDB provides features over MyISAM such as transaction support,
+row-level locks, and consistent non-locking reads.

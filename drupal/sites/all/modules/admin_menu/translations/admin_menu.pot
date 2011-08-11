@@ -1,17 +1,17 @@
-# $Id: admin_menu.pot,v 1.1.2.2 2009/01/21 22:33:13 sun Exp $
+# $Id: admin_menu.pot,v 1.3 2009/01/21 22:33:03 sun Exp $
 #
 # LANGUAGE translation of Drupal (general)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
-#  admin_menu.inc,v 1.11.2.20 2008/12/28 15:23:07 sun
-#  admin_menu.module,v 1.43.2.16 2008/12/28 15:23:07 sun
-#  admin_menu.info,v 1.5.2.1 2008/11/30 12:50:36 sun
+#  admin_menu.inc,v 1.35 2008/12/28 15:22:57 sun
+#  admin_menu.module,v 1.63 2008/12/28 15:22:57 sun
+#  admin_menu.info,v 1.9 2008/11/30 12:50:23 sun
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
-"POT-Creation-Date: 2009-01-21 22:28+0100\n"
+"POT-Creation-Date: 2009-01-21 22:26+0100\n"
 "PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
 "Last-Translator: NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <EMAIL@ADDRESS>\n"
@@ -76,51 +76,51 @@ msgstr ""
 msgid "Wipe and rebuild"
 msgstr ""
 
-#: admin_menu.inc:410
+#: admin_menu.inc:412
 msgid "Administration menu settings"
 msgstr ""
 
-#: admin_menu.inc:415
+#: admin_menu.inc:417
 msgid "None"
 msgstr ""
 
-#: admin_menu.inc:415
+#: admin_menu.inc:417
 msgid "Menu link ID"
 msgstr ""
 
-#: admin_menu.inc:415
+#: admin_menu.inc:417
 msgid "Weight"
 msgstr ""
 
-#: admin_menu.inc:415
+#: admin_menu.inc:417
 msgid "Parent link ID"
 msgstr ""
 
-#: admin_menu.inc:418
+#: admin_menu.inc:420
 msgid "Display additional data for each menu item"
 msgstr ""
 
-#: admin_menu.inc:421
+#: admin_menu.inc:423
 msgid "Display the selected items next to each menu item link."
 msgstr ""
 
-#: admin_menu.inc:425
+#: admin_menu.inc:427
 msgid "Display all menu items"
 msgstr ""
 
-#: admin_menu.inc:427
+#: admin_menu.inc:429
 msgid "If enabled, all menu items are displayed regardless of your site permissions. <em>Note: Do not enable on a production site.</em>"
 msgstr ""
 
-#: admin_menu.inc:444
+#: admin_menu.inc:446
 msgid "Enabled these modules: !module-list."
 msgstr ""
 
-#: admin_menu.inc:456
+#: admin_menu.inc:458
 msgid "Disabled these modules: !module-list."
 msgstr ""
 
-#: admin_menu.inc:460
+#: admin_menu.inc:462
 msgid "No developer modules are enabled."
 msgstr ""
 
@@ -140,31 +140,55 @@ msgstr ""
 msgid "The menu items displayed in the administration menu depend upon the actual permissions of the viewer. First, the administration menu is only displayed to users in roles with the <em>Access administration menu</em> (admin_menu module) permission. Second, a user must be a member of a role with the <em>Access administration pages</em> (system module) permission to view administrative links. And, third, only currently permitted links are displayed; for example, if a user is not a member of a role with the permissions <em>Administer permissions</em> (user module) and <em>Administer users</em> (user module), the <em>User management</em> menu item is not displayed."
 msgstr ""
 
-#: admin_menu.module:306
+#: admin_menu.module:33;33
+msgid "Access administration menu"
+msgstr ""
+
+#: admin_menu.module:34;34
+msgid "Display the administration menu at the top of each page."
+msgstr ""
+
+#: admin_menu.module:37;37
+msgid "Display Drupal links"
+msgstr ""
+
+#: admin_menu.module:38;38
+msgid "Provide Drupal.org links in the administration menu."
+msgstr ""
+
+#: admin_menu.module:312
 msgid "Current anonymous / authenticated users"
 msgstr ""
 
-#: admin_menu.module:308
+#: admin_menu.module:314
 msgid "@count-anon / @count-auth !icon"
 msgstr ""
 
-#: admin_menu.module:321
+#: admin_menu.module:327
 msgid "Home"
 msgstr ""
 
-#: admin_menu.module:31
+#: admin_menu.module:32
 msgid "access administration menu"
 msgstr ""
 
-#: admin_menu.module:31
+#: admin_menu.module:33;37
+msgid "title"
+msgstr ""
+
+#: admin_menu.module:34;38
+msgid "description"
+msgstr ""
+
+#: admin_menu.module:36
 msgid "display drupal links"
 msgstr ""
 
-#: admin_menu.module:54 admin_menu.info:0
+#: admin_menu.module:63 admin_menu.info:0
 msgid "Administration menu"
 msgstr ""
 
-#: admin_menu.module:55
+#: admin_menu.module:64
 msgid "Adjust administration menu settings."
 msgstr ""
 

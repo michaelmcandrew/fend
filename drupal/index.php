@@ -1,8 +1,4 @@
 <?php
-// $Id: index.php,v 1.94 2007/12/26 08:46:48 dries Exp $
-error_reporting(E_ALL);
-ini_set('display_errors', TRUE);
-ini_set('display_startup_errors', TRUE);
 
 /**
  * @file
@@ -15,28 +11,11 @@ ini_set('display_startup_errors', TRUE);
  * See COPYRIGHT.txt and LICENSE.txt.
  */
 
-require_once './includes/bootstrap.inc';
+/**
+ * Root directory of Drupal installation.
+ */
+define('DRUPAL_ROOT', getcwd());
+
+require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-
-$return = menu_execute_active_handler();
-
-// Menu status constants are integers; page content is a string.
-if (is_int($return)) {
-  switch ($return) {
-    case MENU_NOT_FOUND:
-      drupal_not_found();
-      break;
-    case MENU_ACCESS_DENIED:
-      drupal_access_denied();
-      break;
-    case MENU_SITE_OFFLINE:
-      drupal_site_offline();
-      break;
-  }
-}
-elseif (isset($return)) {
-  // Print any value (including an empty string) except NULL or undefined:
-  print theme('page', $return);
-}
-
-drupal_page_footer();
+menu_execute_active_handler();

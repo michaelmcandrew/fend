@@ -1,5 +1,4 @@
 <?php
-// $Id: translation.views.inc,v 1.8 2009/01/07 23:13:46 merlinofchaos Exp $
 
 /**
  * @file
@@ -14,7 +13,7 @@
  */
 
 /**
- * Implementation of hook_views_data_alter().
+ * Implements hook_views_data_alter().
  *
  * Add translation information to the node table.
  */
@@ -22,13 +21,13 @@ function translation_views_data_alter(&$data) {
 
   // Joins
   $data['node']['table']['join']['node'] = array(
-	  'left_field' => 'tnid',
-	  'field' => 'tnid',
+    'left_field' => 'tnid',
+    'field' => 'tnid',
   );
 
   // Language field
   $data['node']['language'] = array(
-    'group' => t('Node translation'),
+    'group' => t('Content translation'),
     'title' => t('Language'),
     'help' => t('The language the content is in.'),
     'field' => array(
@@ -41,11 +40,14 @@ function translation_views_data_alter(&$data) {
     'argument' => array(
       'handler' => 'views_handler_argument_node_language',
     ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
   );
 
   // The translation ID (nid of the "source" translation)
   $data['node']['tnid'] = array(
-    'group' => t('Node translation'),
+    'group' => t('Content translation'),
     'title' => t('Translation set node ID'),
     'help' => t('The ID of the translation set the content belongs to.'),
     'field' => array(
@@ -57,7 +59,6 @@ function translation_views_data_alter(&$data) {
     ),
     'argument' => array(
       'handler' => 'views_handler_argument_node_tnid',
-      'parent' => 'views_handler_argument_numeric', // make sure parent is included
       'name field' => 'title', // the field to display in the summary.
       'numeric' => TRUE,
       'validate type' => 'tnid',
@@ -77,7 +78,7 @@ function translation_views_data_alter(&$data) {
 
   // The source translation.
   $data['node']['translation'] = array(
-    'group' => t('Node translation'),
+    'group' => t('Content translation'),
     'title' => t('Translations'),
     'help' => t('Versions of content in different languages.'),
     'relationship' => array(
@@ -94,9 +95,9 @@ function translation_views_data_alter(&$data) {
 
   // The source translation.
   $data['node']['source_translation'] = array(
-    'group' => t('Node translation'),
+    'group' => t('Content translation'),
     'title' => t('Source translation'),
-    'help' => t('Nodes that are either untranslated or are the original versions of a translation set.'),
+    'help' => t('Content that is either untranslated or is the original version of a translation set.'),
     'filter' => array(
       'handler' => 'views_handler_filter_node_tnid',
     ),
@@ -106,7 +107,7 @@ function translation_views_data_alter(&$data) {
   $data['node']['child_translation'] = array(
     'group' => t('Node translation'),
     'title' => t('Child translation'),
-    'help' => t('Nodes that are translations of a source translation.'),
+    'help' => t('Content that is a translation of a source translation.'),
     'filter' => array(
       'handler' => 'views_handler_filter_node_tnid_child',
     ),
@@ -114,9 +115,9 @@ function translation_views_data_alter(&$data) {
 
   // Translation status
   $data['node']['translate'] = array(
-    'group' => t('Node translation'),
+    'group' => t('Content translation'),
     'title' => t('Translation status'),
-    'help' => t('The translation status of the node--whether or not the translation needs to be updated.'),
+    'help' => t('The translation status of the content - whether or not the translation needs to be updated.'),
     'field' => array(
       'handler' => 'views_handler_field_boolean',
       'click sortable' => TRUE,
@@ -131,46 +132,17 @@ function translation_views_data_alter(&$data) {
     ),
   );
 
-}
-
-/**
- * Implementation of hook_views_handlers() to register all of the basic handlers
- * views uses.
- */
-function translation_views_handlers() {
-  return array(
-    'info' => array(
-      'path' => drupal_get_path('module', 'views') . '/modules/translation',
-    ),
-    'handlers' => array(
-      // field handlers
-      'views_handler_field_node_language' => array(
-        'parent' => 'views_handler_field_node',
-      ),
-      // argument handlers
-      'views_handler_argument_node_language' => array(
-        'parent' => 'views_handler_argument',
-      ),
-      'views_handler_argument_node_tnid' => array(
-        'parent' => 'views_handler_argument',
-      ),
-      // filters
-      'views_handler_filter_node_language' => array(
-        'parent' => 'views_handler_filter_in_operator',
-      ),
-      'views_handler_filter_node_tnid' => array(
-        'parent' => 'views_handler_filter',
-      ),
-      // relationships
-      'views_handler_relationship_translation' => array(
-        'parent' => 'views_handler_relationship',
-      ),
-      'views_handler_filter_node_tnid_child' => array(
-        'parent' => 'views_handler_filter',
-      ),
-
+  // Translate node link.
+  $data['node']['translate_node'] = array(
+    'group' => t('Content translation'),
+    'title' => t('Translate link'),
+    'help' => t('Provide a simple link to translate the node.'),
+    'field' => array(
+      'handler' => 'views_handler_field_node_link_translate',
     ),
   );
+
+
 }
 
 /**

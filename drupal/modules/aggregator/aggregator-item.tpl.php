@@ -1,8 +1,7 @@
 <?php
-// $Id: aggregator-item.tpl.php,v 1.1 2007/09/13 08:02:38 goba Exp $
 
 /**
- * @file aggregator-item.tpl.php
+ * @file
  * Default theme implementation to format an individual feed item for display
  * on the aggregator page.
  *

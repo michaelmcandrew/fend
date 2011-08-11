@@ -1,14 +1,15 @@
-; $Id: pathauto.info,v 1.4.2.2 2010/03/14 05:23:36 davereid Exp $
 name = Pathauto
 description = Provides a mechanism for modules to automatically generate aliases for the content they manage.
 dependencies[] = path
 dependencies[] = token
-core = 6.x
-recommends[] = path_redirect
+core = 7.x
+files[] = pathauto.test
+configure = admin/config/search/path/patterns
+recommends[] = redirect
 
-; Information added by drupal.org packaging script on 2010-10-07
-version = "6.x-1.5"
-core = "6.x"
+; Information added by drupal.org packaging script on 2011-06-16
+version = "7.x-1.0-rc2"
+core = "7.x"
 project = "pathauto"
-datestamp = "1286469664"
+datestamp = "1308241021"
 

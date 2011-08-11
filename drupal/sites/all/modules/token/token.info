@@ -1,11 +1,15 @@
-; $Id: token.info,v 1.2.2.1 2007/10/29 04:40:41 eaton Exp $
 name = Token
-description = Provides a shared API for replacement of textual placeholders with actual data.
-core = 6.x
+description = Provides a user interface for the Token API and some missing core tokens.
+core = 7.x
+files[] = token.module
+files[] = token.install
+files[] = token.tokens.inc
+files[] = token.pages.inc
+files[] = token.test
 
-; Information added by drupal.org packaging script on 2010-10-07
-version = "6.x-1.15"
-core = "6.x"
+; Information added by drupal.org packaging script on 2011-07-26
+version = "7.x-1.0-beta3"
+core = "7.x"
 project = "token"
-datestamp = "1286469963"
+datestamp = "1311709319"
 

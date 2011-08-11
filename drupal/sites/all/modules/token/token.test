@@ -1,36 +1,99 @@
 <?php
-// $Id: token.test,v 1.1.2.14 2010/08/09 18:39:54 davereid Exp $
-
-/**
- * @file
- * Tests for the token and token_actions modules.
- */
 
 /**
  * Helper test class with some added functions for testing.
  */
 class TokenTestHelper extends DrupalWebTestCase {
-  function setUp() {
-    // Call parent::setUp() allowing test cases to pass further modules.
-    $modules = func_get_args();
-    $modules = array_merge(array('path', 'token'), $modules);
-    
-    $parent_callback = 'parent::setUp';
-    if (version_compare(PHP_VERSION, '5.3.0', '<')) {
-      $parent_callback = array($this, 'parent::setUp');
-    }
-    call_user_func_array($parent_callback, $modules);
+  function setUp($modules = array()) {
+    $modules[] = 'path';
+    $modules[] = 'token';
+    $modules[] = 'token_test';
+    parent::setUp($modules);
   }
 
-  function assertToken($type, $object, $token, $expected, array $options = array()) {
-    $this->assertTokens($type, $object, array($token => $expected), $options);
+  function assertToken($type, array $data, $token, $expected, array $options = array()) {
+    return $this->assertTokens($type, $data, array($token => $expected), $options);
   }
 
-  function assertTokens($type, $object, array $tokens, array $options = array()) {
-    $values = token_get_values($type, $object, TRUE, $options);
-    $values = array_combine($values->tokens, $values->values);
+  function assertTokens($type, array $data, array $tokens, array $options = array()) {
+    $token_input = drupal_map_assoc(array_keys($tokens));
+    $values = token_generate($type, $token_input, $data, $options);
     foreach ($tokens as $token => $expected) {
-      $this->assertIdentical($values[$token], $expected, t("Token value for [@token] was '@actual', expected value '@expected'.", array('@token' => $token, '@actual' => $values[$token], '@expected' => $expected)));
+      if (!isset($expected)) {
+        $this->assertTrue(!isset($values[$token]), t("Token value for [@type:@token] was not generated.", array('@type' => $type, '@token' => $token)));
+      }
+      elseif (!isset($values[$token])) {
+        $this->fail(t("Token value for [@type:@token] was not generated.", array('@type' => $type, '@token' => $token)));
+      }
+      elseif (!empty($options['regex'])) {
+        $this->assertTrue(preg_match('/^' . $expected . '$/', $values[$token]), t("Token value for [@type:@token] was '@actual', matching regular expression pattern '@expected'.", array('@type' => $type, '@token' => $token, '@actual' => $values[$token], '@expected' => $expected)));
+      }
+      else {
+        $this->assertIdentical($values[$token], $expected, t("Token value for [@type:@token] was '@actual', expected value '@expected'.", array('@type' => $type, '@token' => $token, '@actual' => $values[$token], '@expected' => $expected)));
+      }
+    }
+
+    return $values;
+  }
+
+  function assertNoTokens($type, array $data, array $tokens, array $options = array()) {
+    $token_input = drupal_map_assoc($tokens);
+    $values = token_generate($type, $token_input, $data, $options);
+    foreach ($tokens as $token) {
+      $this->assertTrue(!isset($values[$token]), t("Token value for [@type:@token] was not generated.", array('@type' => $type, '@token' => $token)));
+    }
+    return $values;
+  }
+
+  function saveAlias($source, $alias, $language = LANGUAGE_NONE) {
+    $alias = array(
+      'source' => $source,
+      'alias' => $alias,
+      'language' => $language,
+    );
+    path_save($alias);
+    return $alias;
+  }
+
+  function saveEntityAlias($entity_type, $entity, $alias, $language = LANGUAGE_NONE) {
+    $uri = entity_uri($entity_type, $entity);
+    return $this->saveAlias($uri['path'], $alias, $language);
+  }
+
+  /**
+   * Make a page request and test for token generation.
+   */
+  function assertPageTokens($url, array $tokens, array $data = array(), array $options = array()) {
+    if (empty($tokens)) {
+      return TRUE;
+    }
+
+    $token_page_tokens = array(
+      'tokens' => $tokens,
+      'data' => $data,
+      'options' => $options,
+    );
+    variable_set('token_page_tokens', $token_page_tokens);
+
+    $options += array('url_options' => array());
+    $this->drupalGet($url, $options['url_options']);
+    $this->refreshVariables();
+    $result = variable_get('token_page_tokens', array());
+
+    if (!isset($result['values']) || !is_array($result['values'])) {
+      return $this->fail('Failed to generate tokens.');
+    }
+
+    foreach ($tokens as $token => $expected) {
+      if (!isset($expected)) {
+        $this->assertTrue(!isset($result['values'][$token]) || $result['values'][$token] === $token, t("Token value for @token was not generated.", array('@token' => $token)));
+      }
+      elseif (!isset($result['values'][$token])) {
+        $this->fail(t('Failed to generate token @token.', array('@token' => $token)));
+      }
+      else {
+        $this->assertIdentical($result['values'][$token], (string) $expected, t("Token value for @token was '@actual', expected value '@expected'.", array('@token' => $token, '@actual' => $result['values'][$token], '@expected' => $expected)));
+      }
     }
   }
 }
@@ -51,20 +114,59 @@ class TokenUnitTestCase extends TokenTestHelper {
     $tests = array();
     $tests[] = array(
       'valid tokens' => array(
-        '[title-raw]',
-        '[yyyy]',
-        '[mod-yyyy]',
-        '[site-name]',
-        '[site-slogan]',
+        '[node:title]',
+        '[node:created:short]',
+        '[node:created:custom:invalid]',
+        '[node:created:custom:mm-YYYY]',
+        '[site:name]',
+        '[site:slogan]',
+        '[current-date:short]',
+        '[current-user:uid]',
+        '[current-user:ip-address]',
       ),
       'invalid tokens' => array(
-        '[title-invalid]',
-        '[invalid]',
-        '[mod-invalid]',
-        '[invalid-title]',
-        '[site-invalid]',
+        '[node:title:invalid]',
+        '[node:created:invalid]',
+        '[node:created:short:invalid]',
+        '[invalid:title]',
+        '[site:invalid]',
+        '[user:ip-address]',
+        '[user:uid]',
+        '[comment:cid]',
+        // Deprecated tokens
+        '[node:tnid]',
+        '[node:type]',
+        '[node:type-name]',
+        '[date:short]',
       ),
       'types' => array('node'),
+    );
+    $tests[] = array(
+      'valid tokens' => array(
+        '[node:title]',
+        '[node:created:short]',
+        '[node:created:custom:invalid]',
+        '[node:created:custom:mm-YYYY]',
+        '[site:name]',
+        '[site:slogan]',
+        '[user:uid]',
+        '[comment:cid]',
+        '[current-date:short]',
+        '[current-user:uid]',
+      ),
+      'invalid tokens' => array(
+        '[node:title:invalid]',
+        '[node:created:invalid]',
+        '[node:created:short:invalid]',
+        '[invalid:title]',
+        '[site:invalid]',
+        '[user:ip-address]',
+        // Deprecated tokens
+        '[node:tnid]',
+        '[node:type]',
+        '[node:type-name]',
+      ),
+      'types' => array('all'),
     );
 
     foreach ($tests as $test) {
@@ -75,80 +177,39 @@ class TokenUnitTestCase extends TokenTestHelper {
 
       sort($invalid_tokens);
       sort($test['invalid tokens']);
-      $this->assertEqual($invalid_tokens, $test['invalid tokens'], 'Invalid tokens detected properly.');
+      $this->assertEqual($invalid_tokens, $test['invalid tokens'], 'Invalid tokens detected properly: ' . implode(', ', $invalid_tokens));
     }
   }
 }
 
-class TokenNodeTestCase extends TokenTestHelper {
+class TokenURLTestCase extends TokenTestHelper {
   public static function getInfo() {
     return array(
-      'name' => 'Node token tests',
-      'description' => 'Test the node tokens.',
+      'name' => 'URL token tests',
+      'description' => 'Test the URL tokens.',
       'group' => 'Token',
     );
   }
 
-  function testNodeTokens() {
-    $time = time();
-    $created = gmmktime(0, 0, 0, 11, 19, 1978);
-    $changed = gmmktime(0, 0, 0, 7, 4, 1984);
-    $node = $this->drupalCreateNode(array(
-      'type' => 'page',
-      'language' => 'und',
-      'created' => $created,
-      'log' => '<blink>' . $this->randomName() . '</blink>',
-    ));
-    $node->changed = $changed;
-    path_set_alias('node/' . $node->nid, 'content/first-node');
+  function setUp($modules = array()) {
+    parent::setUp($modules);
+    $this->saveAlias('node/1', 'first-node');
+    variable_set('clean_url', 1);
+  }
 
+  function testURLTokens() {
     $tokens = array(
-      'nid' => $node->nid,
-      'type' => 'page',
-      'type-name' => 'Page',
-      'language' => 'und',
-      'node-path' => 'content/first-node',
-      'node-url' => url('node/' . $node->nid, array('absolute' => TRUE)),
-      'small' => '11/19/1978 - 00:00',
-      'yyyy' => '1978',
-      'yy' => '78',
-      'month' => 'November',
-      'mon' => 'Nov',
-      'mm' => '11',
-      'm' => '11',
-      'ww' => '46',
-      'date' => '7',
-      'day' => 'Sunday',
-      'ddd' => 'Sun',
-      'dd' => '19',
-      'd' => '19',
-      'raw' => 280281600,
-      'since' => format_interval($time - 280281600),
-      'mod-small' => '07/04/1984 - 00:00',
-      'mod-yyyy' => '1984',
-      'mod-yy' => '84',
-      'mod-month' => 'July',
-      'mod-mon' => 'Jul',
-      'mod-mm' => '07',
-      'mod-m' => '7',
-      'mod-ww' => '27',
-      'mod-date' => '3',
-      'mod-day' => 'Wednesday',
-      'mod-ddd' => 'Wed',
-      'mod-dd' => '04',
-      'mod-d' => '4',
-      'mod-raw' => 457747200,
-      'mod-since' => format_interval($time - 457747200),
-      'log' => filter_xss($node->log),
-      'log-raw' => $node->log,
+      'absolute' => 'http://example.com/first-node',
+      'relative' => base_path() . 'first-node',
+      'path' => 'node/1',
+      'alias' => 'first-node',
+      'brief' => 'example.com/first-node',
     );
-    $this->assertTokens('node', $node, $tokens);
+    $this->assertTokens('url', array('path' => 'node/1', 'options' => array('base_url' => 'http://example.com')), $tokens);
   }
 }
 
 class TokenCommentTestCase extends TokenTestHelper {
-  protected $node;
-
   public static function getInfo() {
     return array(
       'name' => 'Comment token tests',
@@ -157,88 +218,268 @@ class TokenCommentTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp() {
-    parent::setUp('comment');
-    $this->node = $this->drupalCreateNode(array('comment' => 2));
-  }
-
-  function loadComment($cid) {
-    return db_fetch_object(db_query('SELECT c.cid, c.pid, c.nid, c.subject, c.comment, c.format, c.timestamp, c.name, c.mail, c.homepage, u.uid, u.name AS registered_name, u.signature, u.signature_format, u.picture, u.data, c.status FROM {comments} c INNER JOIN {users} u ON c.uid = u.uid WHERE c.cid = %d', $cid));
-  }
-
-  function createComment(array $comment) {
-    $comment += array(
-      'cid' => 0,
-      'nid' => $this->node->nid,
-      'pid' => 0,
-      'uid' => 0,
-      'subject' => $this->randomName(),
-      'comment' => $this->randomName(64),
-      'format' => 1,
-      'timestamp' => gmmktime(0, 0, 0, 7, 4, 1984),
-      'status' => COMMENT_PUBLISHED,
-    );
-
-    $cid = comment_save($comment);
-    return $this->loadComment($cid);
-  }
-
   function testCommentTokens() {
-    $time = time();
-    $comment = $this->createComment(array(
-      'timestamp' => gmmktime(0, 0, 0, 7, 4, 1984),
-    ));
+    $node = $this->drupalCreateNode(array('comment' => COMMENT_NODE_OPEN));
+
+    $parent_comment = new stdClass;
+    $parent_comment->nid = $node->nid;
+    $parent_comment->pid = 0;
+    $parent_comment->cid = NULL;
+    $parent_comment->uid = 0;
+    $parent_comment->name = 'anonymous user';
+    $parent_comment->mail = 'anonymous@example.com';
+    $parent_comment->subject = $this->randomName();
+    $parent_comment->timestamp = mt_rand($node->created, REQUEST_TIME);
+    $parent_comment->language = LANGUAGE_NONE;
+    $parent_comment->body[LANGUAGE_NONE][0] = $this->randomName();
+    comment_save($parent_comment);
 
     $tokens = array(
-      'comment-cid' => $comment->cid,
-      'comment-nid' => $this->node->nid,
-      'comment-yyyy' => '1984',
-      'comment-yy' => '84',
-      'comment-month' => 'July',
-      'comment-mon' => 'Jul',
-      'comment-mm' => '07',
-      'comment-m' => '7',
-      'comment-ww' => '27',
-      'comment-date' => '3',
-      'comment-day' => 'Wednesday',
-      'comment-ddd' => 'Wed',
-      'comment-dd' => '04',
-      'comment-d' => '4',
-      'comment-raw' => '457747200',
-      'comment-since' => format_interval($time - 457747200),
-      'comment-node-title' => check_plain($this->node->title),
-      'comment-node-title-raw' => $this->node->title,
+      'url' => url('comment/' . $parent_comment->cid, array('fragment' => 'comment-' . $parent_comment->cid, 'absolute' => TRUE)),
+      'url:absolute' => url('comment/' . $parent_comment->cid, array('fragment' => 'comment-' . $parent_comment->cid, 'absolute' => TRUE)),
+      'url:relative' => url('comment/' . $parent_comment->cid, array('fragment' => 'comment-' . $parent_comment->cid, 'absolute' => FALSE)),
+      'url:path' => 'comment/' . $parent_comment->cid,
+      'url:alias' => 'comment/' . $parent_comment->cid,
+      'parent:url:absolute' => NULL,
     );
-    $this->assertTokens('comment', $comment, $tokens);
+    $this->assertTokens('comment', array('comment' => $parent_comment), $tokens);
 
+    $comment = new stdClass();
+    $comment->nid = $node->nid;
+    $comment->pid = $parent_comment->cid;
+    $comment->cid = NULL;
+    $comment->uid = 1;
+    $comment->subject = $this->randomName();
+    $comment->timestamp = mt_rand($parent_comment->created, REQUEST_TIME);
+    $comment->language = LANGUAGE_NONE;
+    $comment->body[LANGUAGE_NONE][0] = $this->randomName();
+    comment_save($comment);
+
+    $tokens = array(
+      'url' => url('comment/' . $comment->cid, array('fragment' => 'comment-' . $comment->cid, 'absolute' => TRUE)),
+      'url:absolute' => url('comment/' . $comment->cid, array('fragment' => 'comment-' . $comment->cid, 'absolute' => TRUE)),
+      'url:relative' => url('comment/' . $comment->cid, array('fragment' => 'comment-' . $comment->cid, 'absolute' => FALSE)),
+      'url:path' => 'comment/' . $comment->cid,
+      'url:alias' => 'comment/' . $comment->cid,
+      'parent:url:absolute' => url('comment/' . $parent_comment->cid, array('fragment' => 'comment-' . $parent_comment->cid, 'absolute' => TRUE)),
+    );
+    $this->assertTokens('comment', array('comment' => $comment), $tokens);
+  }
+}
+
+class TokenNodeTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Node and content type token tests',
+      'description' => 'Test the node and content type tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function testNodeTokens() {
+    $source_node = $this->drupalCreateNode(array('log' => $this->randomName(), 'path' => array('alias' => 'content/source-node')));
+    $tokens = array(
+      'source' => NULL,
+      'source:nid' => NULL,
+      'log' => $source_node->log,
+      'url:absolute' => url("node/{$source_node->nid}", array('absolute' => TRUE)),
+      'url:relative' => url("node/{$source_node->nid}", array('absolute' => FALSE)),
+      'url:path' => "node/{$source_node->nid}",
+      'url:alias' => 'content/source-node',
+      'content-type' => 'Basic page',
+      'content-type:name' => 'Basic page',
+      'content-type:machine-name' => 'page',
+      'content-type:description' => "Use <em>basic pages</em> for your static content, such as an 'About us' page.",
+      'content-type:node-count' => 1,
+      'content-type:edit-url' => url('admin/structure/types/manage/page', array('absolute' => TRUE)),
+      // Deprecated tokens.
+      'tnid' => 0,
+      'type' => 'page',
+      'type-name' => 'Basic page',
+    );
+    $this->assertTokens('node', array('node' => $source_node), $tokens);
+
+    $translated_node = $this->drupalCreateNode(array('tnid' => $source_node->nid, 'type' => 'article'));
+    $tokens = array(
+      'source' => $source_node->title,
+      'source:nid' => $source_node->nid,
+      'log' => '',
+      'url:absolute' => url("node/{$translated_node->nid}", array('absolute' => TRUE)),
+      'url:relative' => url("node/{$translated_node->nid}", array('absolute' => FALSE)),
+      'url:path' => "node/{$translated_node->nid}",
+      'url:alias' => "node/{$translated_node->nid}",
+      'content-type' => 'Article',
+      'content-type:name' => 'Article',
+      'content-type:machine-name' => 'article',
+      'content-type:description' => "Use <em>articles</em> for time-sensitive content like news, press releases or blog posts.",
+      'content-type:node-count' => 1,
+      'content-type:edit-url' => url('admin/structure/types/manage/article', array('absolute' => TRUE)),
+      // Deprecated tokens.
+      'type' => 'article',
+      'type-name' => 'Article',
+      'tnid' => $source_node->nid,
+    );
+    $this->assertTokens('node', array('node' => $translated_node), $tokens);
+  }
+}
+
+class TokenMenuTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Menu link and menu token tests',
+      'description' => 'Test the menu tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function setUp($modules = array()) {
+    $modules[] = 'menu';
+    parent::setUp($modules);
+  }
+
+  function testMenuTokens() {
+    // Add a root link.
+    $root_link = array(
+      'link_path' => 'root',
+      'link_title' => 'Root link',
+      'menu_name' => 'main-menu',
+    );
+    menu_link_save($root_link);
+
+    // Add another link with the root link as the parent
+    $parent_link = array(
+      'link_path' => 'root/parent',
+      'link_title' => 'Parent link',
+      'menu_name' => 'main-menu',
+      'plid' => $root_link['mlid'],
+    );
+    menu_link_save($parent_link);
+
+    // Test menu link tokens.
+    $tokens = array(
+      'mlid' => $parent_link['mlid'],
+      'title' => 'Parent link',
+      'menu' => 'Main menu',
+      'menu:name' => 'Main menu',
+      'menu:machine-name' => 'main-menu',
+      'menu:description' => 'The <em>Main</em> menu is used on many sites to show the major sections of the site, often in a top navigation bar.',
+      'menu:menu-link-count' => 3, // Standard install creates one link.
+      'menu:edit-url' => url("admin/structure/menu/manage/main-menu", array('absolute' => TRUE)),
+      'url' => url('root/parent', array('absolute' => TRUE)),
+      'url:absolute' => url('root/parent', array('absolute' => TRUE)),
+      'url:relative' => url('root/parent', array('absolute' => FALSE)),
+      'url:path' => 'root/parent',
+      'url:alias' => 'root/parent',
+      'edit-url' => url("admin/structure/menu/item/{$parent_link['mlid']}/edit", array('absolute' => TRUE)),
+      'parent' => 'Root link',
+      'parent:mlid' => $root_link['mlid'],
+      'parent:title' => 'Root link',
+      'parent:menu' => 'Main menu',
+      'parent:parent' => NULL,
+      'root' => 'Root link',
+      'root:mlid' => $root_link['mlid'],
+      'root:parent' => NULL,
+      'root:root' => NULL,
+    );
+    $this->assertTokens('menu-link', array('menu-link' => $parent_link), $tokens);
+
+    // Add a node menu link
+    $node_link = array(
+      'enabled' => TRUE,
+      'link_title' => 'Node link',
+      'plid' => $parent_link['mlid'],
+      'customized' => 0,
+      'description' => '',
+    );
+    $node = $this->drupalCreateNode(array('menu' => $node_link));
+
+    // Test [node:menu] tokens.
+    $tokens = array(
+      'menu-link' => 'Node link',
+      'menu-link:mlid' => $node->menu['mlid'],
+      'menu-link:title' => 'Node link',
+      'menu-link:menu' => 'Main menu',
+      'menu-link:url' => url('node/' . $node->nid, array('absolute' => TRUE)),
+      'menu-link:url:path' => 'node/' . $node->nid,
+      'menu-link:edit-url' => url("admin/structure/menu/item/{$node->menu['mlid']}/edit", array('absolute' => TRUE)),
+      'menu-link:parent' => 'Parent link',
+      'menu-link:parent:mlid' => $node->menu['plid'],
+      'menu-link:parent:mlid' => $parent_link['mlid'],
+      'menu-link:root' => 'Root link',
+      'menu-link:root:mlid' => $root_link['mlid'],
+    );
+    $this->assertTokens('node', array('node' => $node), $tokens);
   }
 }
 
 class TokenTaxonomyTestCase extends TokenTestHelper {
-  protected $vocabulary;
+  protected $vocab;
 
   public static function getInfo() {
     return array(
-      'name' => 'Taxonomy token tests',
+      'name' => 'Taxonomy and vocabulary token tests',
       'description' => 'Test the taxonomy tokens.',
       'group' => 'Token',
     );
   }
 
-  function setUp() {
-    parent::setUp('taxonomy');
-    // Reset the static taxonomy.module caches.
-    taxonomy_vocabulary_load(0, TRUE);
-    taxonomy_get_term(0, TRUE);
+  function setUp($modules = array()) {
+    $modules[] = 'taxonomy';
+    parent::setUp($modules);
+    // Use the default 'Tags' taxonomy included with the standard install profile.
+    $this->vocab = taxonomy_vocabulary_machine_name_load('tags');
+  }
+
+  /**
+   * Test the additional taxonomy term tokens.
+   */
+  function testTaxonomyTokens() {
+    $parent_term = $this->addTerm($this->vocab, array('path' => array('alias' => 'parent-term')));
+    $parent_term_tokens = array(
+      'url' => url("taxonomy/term/{$parent_term->tid}", array('absolute' => TRUE)),
+      'url:absolute' => url("taxonomy/term/{$parent_term->tid}", array('absolute' => TRUE)),
+      'url:relative' => url("taxonomy/term/{$parent_term->tid}", array('absolute' => FALSE)),
+      'url:path' => "taxonomy/term/{$parent_term->tid}",
+      'url:alias' => 'parent-term',
+      'edit-url' => url("taxonomy/term/{$parent_term->tid}/edit", array('absolute' => TRUE)),
+      'root' => NULL,
+    );
+    $this->assertTokens('term', array('term' => $parent_term), $parent_term_tokens);
+
+    $child_term = $this->addTerm($this->vocab, array('parent' => $parent_term->tid));
+    $child_term_tokens = array(
+      'url' => url("taxonomy/term/{$child_term->tid}", array('absolute' => TRUE)),
+      'url:absolute' => url("taxonomy/term/{$child_term->tid}", array('absolute' => TRUE)),
+      'url:relative' => url("taxonomy/term/{$child_term->tid}", array('absolute' => FALSE)),
+      'url:path' => "taxonomy/term/{$child_term->tid}",
+      'url:alias' => "taxonomy/term/{$child_term->tid}",
+      'edit-url' => url("taxonomy/term/{$child_term->tid}/edit", array('absolute' => TRUE)),
+      'root' => check_plain($parent_term->name),
+      'root:tid' => $parent_term->tid,
+    );
+    $this->assertTokens('term', array('term' => $child_term), $child_term_tokens);
+  }
+
+  /**
+   * Test the additional vocabulary tokens.
+   */
+  function testVocabularyTokens() {
+    $vocabulary = $this->vocab;
+    $tokens = array(
+      'machine-name' => 'tags',
+      'edit-url' => url("admin/structure/taxonomy/{$vocabulary->machine_name}/edit", array('absolute' => TRUE)),
+    );
+    $this->assertTokens('vocabulary', array('vocabulary' => $vocabulary), $tokens);
   }
 
   function addVocabulary(array $vocabulary = array()) {
     $vocabulary += array(
       'name' => drupal_strtolower($this->randomName(5)),
-      'nodes' => array('story' => 'story'),
+      'nodes' => array('article' => 'article'),
     );
-    taxonomy_save_vocabulary($vocabulary);
-    return (object) $vocabulary;
+    $vocabulary = (object) $vocabulary;
+    taxonomy_vocabulary_save($vocabulary);
+    return $vocabulary;
   }
 
   function addTerm(stdClass $vocabulary, array $term = array()) {
@@ -246,137 +487,378 @@ class TokenTaxonomyTestCase extends TokenTestHelper {
       'name' => drupal_strtolower($this->randomName(5)),
       'vid' => $vocabulary->vid,
     );
-    taxonomy_save_term($term);
-    return (object) $term;
-  }
-
-  function testTaxonomyTokens() {
-    $vocabulary = $this->addVocabulary(array(
-      'name' => '<blink>Vocab Name</blink>',
-      'description' => '<blink>Vocab Description</blink>',
-    ));
-    $term = $this->addTerm($vocabulary, array(
-      'name' => '<blink>Term Name</blink>',
-      'description' => '<blink>Term Description</blink>',
-    ));
-
-    $tokens = array(
-      'tid' => $term->tid,
-      'cat' => check_plain($term->name),
-      'cat-raw' => $term->name,
-      'cat-description' => 'Term Description',
-      'vid' => $vocabulary->vid,
-      'vocab' => check_plain($vocabulary->name),
-      'vocab-raw' => $vocabulary->name,
-      'vocab-description' => 'Vocab Description',
-    );
-    $this->assertTokens('taxonomy', $term, $tokens);
+    $term = (object) $term;
+    taxonomy_term_save($term);
+    return $term;
   }
 }
 
-class TokenMenuTestCase extends TokenTestHelper {
+class TokenUserTestCase extends TokenTestHelper {
+  protected $account = NULL;
+
   public static function getInfo() {
     return array(
-      'name' => 'Menu token tests',
-      'description' => 'Test the menu tokens.',
+      'name' => 'User token tests',
+      'description' => 'Test the user tokens.',
       'group' => 'Token',
     );
   }
 
-  function setUp() {
-    parent::setUp('menu');
+  function setUp($modules = array()) {
+    parent::setUp($modules);
+
+    // Enable user pictures.
+    variable_set('user_pictures', 1);
+    variable_set('user_picture_file_size', 0);
+
+    // Set up the pictures directory.
+    $picture_path = file_default_scheme() . '://' . variable_get('user_picture_path', 'pictures');
+    if (!file_prepare_directory($picture_path, FILE_CREATE_DIRECTORY)) {
+      $this->fail('Could not create directory ' . $picture_path . '.');
+    }
+
+    $this->account = $this->drupalCreateUser(array('administer users'));
+    $this->drupalLogin($this->account);
   }
 
-  function testMenuTokens() {
-    $root_link = array(
-      'link_path' => '<front>',
-      'link_title' => 'Front link',
-      'menu_name' => 'primary-links',
-    );
-    menu_link_save($root_link);
+  function testUserTokens() {
+    // Add a user picture to the account.
+    $image = current($this->drupalGetTestFiles('image'));
+    $edit = array('files[picture_upload]' => drupal_realpath($image->uri));
+    $this->drupalPost('user/' . $this->account->uid . '/edit', $edit, t('Save'));
 
-    $node_link = array(
-      'enabled' => TRUE,
-      'link_title' => 'Node link',
-      'plid' => $root_link['mlid'],
-      'customized' => 0,
-    );
-    $node = $this->drupalCreateNode(array('menu' => $node_link));
+    // Load actual user data from database.
+    $this->account = user_load($this->account->uid, TRUE);
+    $this->assertTrue(!empty($this->account->picture->fid), 'User picture uploaded.');
 
-    // Test [node:menu] tokens.
+    $user_tokens = array(
+      'picture' => theme('user_picture', array('account' => $this->account)),
+      'picture:fid' => $this->account->picture->fid,
+      'picture:size-raw' => 125,
+      'ip-address' => NULL,
+    );
+    $this->assertTokens('user', array('user' => $this->account), $user_tokens);
+
+    $edit = array('user_pictures' => FALSE);
+    $this->drupalPost('admin/config/people/accounts', $edit, 'Save configuration');
+    $this->assertText('The configuration options have been saved.');
+
+    $user_tokens = array(
+      'picture' => NULL,
+      'picture:fid' => NULL,
+      'ip-address' => NULL,
+    );
+    $this->assertTokens('user', array('user' => $this->account), $user_tokens);
+
+    // The ip address token should work for the current user token type.
     $tokens = array(
-      'menu' => 'Primary links',
-      'menu-link-title' => 'Node link',
-      'menu-link-mlid' => $node->menu['mlid'],
-      'menu-link-plid' => $node->menu['plid'],
-      'menu-link-plid' => $root_link['mlid'],
+      'ip-address' => ip_address(),
     );
-    $this->assertTokens('node', $node, $tokens);
+    $this->assertTokens('current-user', array(), $tokens);
   }
 }
 
-class TokenTestCase extends DrupalWebTestCase {
+class TokenEntityTestCase extends TokenTestHelper {
   public static function getInfo() {
     return array(
-      'name' => t('Token and token action tests'),
-      'description' => t('Test some of the token actions and tokens.'),
-      'group' => t('Token'),
+      'name' => 'Entity token tests',
+      'description' => 'Test the entity tokens.',
+      'group' => 'Token',
     );
   }
 
-  function setUp() {
-    parent::setUp('token', 'token_actions', 'trigger');
+  function setUp($modules = array()) {
+    $modules[] = 'taxonomy';
+    parent::setUp($modules);
+  }
+
+  function testEntityMapping() {
+    $this->assertIdentical(token_get_entity_mapping('token', 'node'), 'node');
+    $this->assertIdentical(token_get_entity_mapping('token', 'term'), 'taxonomy_term');
+    $this->assertIdentical(token_get_entity_mapping('token', 'vocabulary'), 'taxonomy_vocabulary');
+    $this->assertIdentical(token_get_entity_mapping('token', 'invalid'), FALSE);
+    $this->assertIdentical(token_get_entity_mapping('entity', 'node'), 'node');
+    $this->assertIdentical(token_get_entity_mapping('entity', 'taxonomy_term'), 'term');
+    $this->assertIdentical(token_get_entity_mapping('entity', 'taxonomy_vocabulary'), 'vocabulary');
+    $this->assertIdentical(token_get_entity_mapping('entity', 'invalid'), FALSE);
+
+    // Test that when we send the mis-matched entity type into token_replace()
+    // that we still get the tokens replaced.
+    $vocabulary = taxonomy_vocabulary_machine_name_load('tags');
+    $term = $this->addTerm($vocabulary);
+    $this->assertIdentical(token_replace('[vocabulary:name]', array('taxonomy_vocabulary' => $vocabulary)), $vocabulary->name);
+    $this->assertIdentical(token_replace('[term:name][term:vocabulary:name]', array('taxonomy_term' => $term)), $term->name . $vocabulary->name);
+  }
+
+  function addTerm(stdClass $vocabulary, array $term = array()) {
+    $term += array(
+      'name' => drupal_strtolower($this->randomName(5)),
+      'vid' => $vocabulary->vid,
+    );
+    $term = (object) $term;
+    taxonomy_term_save($term);
+    return $term;
+  }
+}
+
+/**
+ * Test the profile tokens.
+ */
+class TokenProfileTestCase extends TokenTestHelper {
+  private $account;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Profile token tests',
+      'description' => 'Test the profile tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function setUp($modules = array()) {
+    $modules[] = 'profile';
+    parent::setUp($modules);
+    $this->account = $this->drupalCreateUser(array('administer users'));
+    $this->drupalLogin($this->account);
   }
 
   /**
-   * Test various behaviors for anonymous users.
+   * Test the profile tokens.
    */
-  function testTokenActionsFunctionalTest() {
-    // Create a user with permission to view the actions administration pages.
-    $user = $this->drupalCreateUser(array('administer actions', 'administer site configuration', 'administer users'));
-    $this->drupalLogin($user);
+  function testProfileTokens() {
+    $field_types = _profile_field_types();
+    foreach (array_keys($field_types) as $field_type) {
+      $field = array();
+      switch ($field_type) {
+        case 'checkbox':
+          $field['title'] = 'This is a checkbox';
+          break;
+        case 'selection':
+          $field['options'] = implode("\n", array('Red', 'Blue', 'Green'));
+          break;
+      }
+      $this->addProfileField($field_type, $field);
+    }
 
-    // Set the site name to something more exciting than Drupal / simpletest@example.com.
-    $settings = array();
-    $site_name = $this->randomName();
-    $site_mail = $this->randomName() .'@example.com';
-    $settings['site_name'] = $site_name;
-    $settings['site_mail'] = $site_mail;
+    // Submit the profile fields for the user.
+    $edit = array(
+      'profile_textfield' => 'This is a text field',
+      'profile_textarea' => "First paragraph.\n\nSecond paragraph.",
+      'profile_checkbox' => TRUE,
+      'profile_selection' => 'Red',
+      'profile_list' => ' Drupal ,  Joomla ',
+      'profile_url' => 'http://www.example.com/',
+      'profile_date[month]' => 5,
+      'profile_date[day]' => 20,
+      'profile_date[year]' => 1984,
+    );
+    $this->drupalPost("user/{$this->account->uid}/edit/SimpleTest", $edit, 'Save');
+    $account = user_load($this->account->uid, TRUE);
 
-    $this->drupalPost('admin/settings/site-information', $settings, t('Save configuration'));
-    $this->assertText('saved', 'Site settings saved.');
+    // Test the profile token values.
+    $tokens = array(
+      'profile-textfield' => 'This is a text field',
+      'profile-textarea' => "<p>First paragraph.</p>\n<p>Second paragraph.</p>\n",
+      'profile-checkbox' => 'This is a checkbox',
+      'profile-selection' => 'Red',
+      'profile-list' => 'Drupal, Joomla',
+      'profile-url' => 'http://www.example.com/',
+      'profile-date' => format_date(453859200, 'medium', '', NULL),
+      'profile-date:raw' => '453859200',
+      'profile-date:custom:Y' => '1984',
+    );
+    $this->assertTokens('user', array('user' => $account), $tokens);
 
-    // Create an action to display to users
-    $action = array();
-    $action['action'] = md5('token_actions_message_action');
-    $this->drupalPost('admin/settings/actions', $action, t('Create'));
+    // 'Un-select' the checkbox and select profile fields.
+    $edit = array(
+      'profile_checkbox' => FALSE,
+      'profile_selection' => '0',
+    );
+    $this->drupalPost("user/{$this->account->uid}/edit/SimpleTest", $edit, 'Save');
+    $account = user_load($this->account->uid, TRUE);
 
-    // Configure the action to use a handful of tokens.
-    $action = array();
-    $action_description = $this->randomName();
-    $action['actions_description'] = $action_description;
-    $action['message'] = 'Hello simpletest | [user-name] | [user-id] | [user-mail] | [site-name] | [site-mail]';
-    $this->drupalPost('admin/settings/actions/configure/'. md5('token_actions_message_action'), $action, t('Save'));
-
-    // Trigger the action when a user is created.
-    $trigger = array();
-    $trigger['aid'] = md5('1'); //TODO don't hardcode the 1.
-    // TODO this should be assigned to a specific aid like aid_4, but that's not possible b/c actions creates non-unique form names.
-    // so instead we use "aid" which is the "after a user is created" trigger.
-    $this->drupalPost('admin/build/trigger/user', $trigger, t('Assign'));
-    // TODOXXX confirm each post gets saved.
-
-    // Create a user to trigger the action.
-    $edit = array();
-    $edit['name']   = $this->randomName();
-    $edit['mail']   = $edit['name'] .'@example.com';
-    $pass = user_password();
-    $edit['pass[pass1]']   = $pass;
-    $edit['pass[pass2]']   = $pass;
-
-    $this->drupalPost('admin/user/user/create', $edit, t('Create new account'));
-    $this->assertText('Hello simpletest | '. $user->name  .' | '. $user->uid .' | '. $user->mail .' | '. $site_name .' | '. $site_mail, 'Tokenized message displays');
-
+    // The checkbox and select profile tokens should no longer return a value.
+    $tokens = array(
+      'profile-checkbox' => NULL,
+      'profile-selection' => NULL,
+    );
+    $this->assertTokens('user', array('user' => $account), $tokens);
   }
 
+  /**
+   * Add a profile field.
+   *
+   * @param $type
+   *   The profile field type.
+   * @param $field
+   *   (optional) An array of the profile field properties.
+   *
+   * @return
+   *   The saved profile field record object.
+   *
+   * @see drupal_form_submit()
+   */
+  function addProfileField($type, array $field = array()) {
+    $field += array(
+      'type' => $type,
+      'category' => 'SimpleTest',
+      'title' => $this->randomName(8),
+      'name' => 'profile_' . $type,
+      'explanation' => $this->randomName(50),
+      'autocomplete' => 0,
+      'required' => 0,
+      'register' => 0,
+    );
+
+    // Submit the profile field using drupal_form_submit().
+    $form_state = array();
+    $form_state['values'] = $field;
+    $form_state['values']['op'] = 'Save field';
+    $form_state['build_info']['args'] = array($type);
+    drupal_form_submit('profile_field_form', $form_state);
+
+    // Verify the profile field was created successfully.
+    $saved_field = db_query("SELECT * FROM {profile_field} WHERE type = :type AND name = :name", array(':type' => $type, ':name' => $field['name']))->fetchObject();
+    $this->assertTrue($saved_field, t('Profile field @name created.', array('@name' => $saved_field->name)));
+
+    // Why in the hell these fields get saved with not the explict values
+    // for autocomplete, register and required that we tell it, I have no idea.
+    // So we need to manually save it again. Stupid profile module...
+    $saved_field->autocomplete = $field['autocomplete'];
+    $saved_field->required = $field['required'];
+    $saved_field->register = $field['register'];
+    drupal_write_record('profile_field', $saved_field, array('fid'));
+
+    return $saved_field;
+  }
+}
+
+/**
+ * Test the current page tokens.
+ */
+class TokenCurrentPageTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Current page token tests',
+      'description' => 'Test the [current-page:*] tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function testCurrentPageTokens() {
+    $tokens = array(
+      '[current-page:title]' => t('Welcome to @site-name', array('@site-name' => variable_get('site_name', 'Drupal'))),
+      '[current-page:url]' => url('node', array('absolute' => TRUE)),
+      '[current-page:url:absolute]' => url('node', array('absolute' => TRUE)),
+      '[current-page:url:relative]' => url('node', array('absolute' => FALSE)),
+      '[current-page:url:path]' => 'node',
+      '[current-page:url:alias]' => 'node',
+      '[current-page:page-number]' => 1,
+      '[current-page:arg:0]' => 'node',
+      '[current-page:arg:1]' => NULL,
+      '[current-page:query:foo]' => NULL,
+      '[current-page:query:bar]' => NULL,
+      '[current-page:query:q]' => 'node',
+    );
+    $this->assertPageTokens('', $tokens);
+
+    $node = $this->drupalCreateNode(array('title' => 'Node title', 'path' => array('alias' => 'node-alias')));
+    $tokens = array(
+      '[current-page:title]' => 'Node title',
+      '[current-page:url]' => url("node/{$node->nid}", array('absolute' => TRUE)),
+      '[current-page:url:absolute]' => url("node/{$node->nid}", array('absolute' => TRUE)),
+      '[current-page:url:relative]' => url("node/{$node->nid}", array('absolute' => FALSE)),
+      '[current-page:url:path]' => "node/{$node->nid}",
+      '[current-page:url:alias]' => 'node-alias',
+      '[current-page:page-number]' => 1,
+      '[current-page:arg:0]' => 'node',
+      '[current-page:arg:1]' => $node->nid,
+      '[current-page:arg:2]' => NULL,
+      '[current-page:query:foo]' => 'bar',
+      '[current-page:query:bar]' => NULL,
+      '[current-page:query:q]' => 'node/1',
+    );
+    $this->assertPageTokens("node/{$node->nid}", $tokens, array(), array('url_options' => array('query' => array('foo' => 'bar'))));
+  }
+}
+
+class TokenArrayTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Array token tests',
+      'description' => 'Test the array tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function testArrayTokens() {
+    $array = array(0 => 'a', 1 => 'b', 2 => 'c', 4 => 'd');
+
+    // Test the profile token values.
+    $tokens = array(
+      'first' => 'a',
+      'last' => 'd',
+      'value:0' => 'a',
+      'value:2' => 'c',
+      'count' => 4,
+      'keys' => '0, 1, 2, 4',
+      'keys:value:3' => '4',
+      'keys:join' => '0124',
+      'reversed' => 'd, c, b, a',
+      'reversed:keys' => '4, 2, 1, 0',
+      'join:/' => 'a/b/c/d',
+      'join' => 'abcd',
+      'join:, ' => 'a, b, c, d',
+      'join: ' => 'a b c d',
+    );
+    $this->assertTokens('array', array('array' => $array), $tokens);
+  }
+}
+
+class TokenRandomTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Random token tests',
+      'description' => 'Test the random tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function testRandomTokens() {
+    $tokens = array(
+      'number' => '[0-9]{1,}',
+      'hash:md5' => '[0-9a-f]{32}',
+      'hash:sha1' => '[0-9a-f]{40}',
+      'hash:sha256' => '[0-9a-f]{64}',
+      'hash:invalid-algo' => NULL,
+    );
+
+    $first_set = $this->assertTokens('random', array(), $tokens, array('regex' => TRUE));
+    $second_set = $this->assertTokens('random', array(), $tokens, array('regex' => TRUE));
+    foreach ($first_set as $token => $value) {
+      $this->assertNotIdentical($first_set[$token], $second_set[$token]);
+    }
+  }
+}
+
+/**
+ * @todo Remove when http://drupal.org/node/1173706 is fixed.
+ */
+class TokenDateTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Date token tests',
+      'description' => 'Test the date tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function testDateTokens() {
+    $tokens = array(
+      'token_test' => '1984',
+      'invalid_format' => NULL,
+    );
+
+    $this->assertTokens('date', array('date' => 453859200), $tokens);
+  }
 }

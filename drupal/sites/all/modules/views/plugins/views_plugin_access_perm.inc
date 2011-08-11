@@ -1,34 +1,48 @@
 <?php
-// $Id: views_plugin_access_perm.inc,v 1.3 2009/01/07 23:31:13 merlinofchaos Exp $
 
 /**
  * Access plugin that provides permission-based access control.
  */
 class views_plugin_access_perm extends views_plugin_access {
   function access($account) {
-    return user_access($this->options['perm'], $account);
+    return views_check_perm($this->options['perm'], $account);
   }
 
   function get_access_callback() {
-    return array('user_access', array($this->options['perm']));
+    return array('views_check_perm', array($this->options['perm']));
   }
 
   function summary_title() {
+    $permissions = module_invoke_all('permission');
+    if (isset($permissions[$this->options['perm']])) {
+      return $permissions[$this->options['perm']]['title'];
+    }
+
     return t($this->options['perm']);
   }
 
-  function option_defaults(&$options) {
-    $options['perm'] = 'access content';
+
+  function option_definition() {
+    $options = parent::option_definition();
+    $options['perm'] = array('default' => 'access content');
+
+    return $options;
   }
 
   function options_form(&$form, &$form_state) {
     $perms = array();
+    $module_info = system_get_info('module');
+
     // Get list of permissions
-    foreach (module_list(FALSE, FALSE, TRUE) as $module) {
-      if ($permissions = module_invoke($module, 'perm')) {
-        $perms[$module] = drupal_map_assoc($permissions);
+    foreach (module_implements('permission') as $module) {
+      $permissions = module_invoke($module, 'permission');
+      foreach ($permissions as $name => $perm) {
+        $perms[$module_info[$module]['name']][$name] = strip_tags($perm['title']);
       }
     }
+
+    asort($perms);
+
     $form['perm'] = array(
       '#type' => 'select',
       '#options' => $perms,

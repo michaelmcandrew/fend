@@ -1,5 +1,4 @@
 <?php
-// $Id: views_plugin_row_search_view.inc,v 1.1 2008/09/03 19:21:30 merlinofchaos Exp $
 /**
  * @file
  * Contains the search row style plugin.
@@ -29,6 +28,11 @@ class views_plugin_row_search_view extends views_plugin_row {
    * Override the behavior of the render() function.
    */
   function render($row) {
-    return theme($this->theme_functions(), $this->view, $this->options, $row);
+    return theme($this->theme_functions(),
+      array(
+        'view' => $this->view,
+        'options' => $this->options,
+        'row' => $row
+      ));
   }
 }

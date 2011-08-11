@@ -1,11 +1,11 @@
-/* $Id: README.txt,v 1.20.2.8 2009/01/16 20:39:26 sun Exp $ */
+/* $Id: README.txt,v 1.30 2011/01/07 00:14:01 sun Exp $ */
 
 -- SUMMARY --
 
-The Drupal administration menu module displays the entire administrative
-menu tree (and most local tasks) in a drop-down menu, providing administrators
-one- or two-click access to most pages. Other modules may also add menu
-links to administration menu using hook_admin_menu().
+The Administration menu module displays the entire administrative menu tree (and
+most local tasks) in a drop-down menu, providing administrators one- or
+two-click access to most pages.  Other modules may also add menu links to the
+menu using hook_admin_menu_output_alter().
 
 For a full description of the module, visit the project page:
   http://drupal.org/project/admin_menu
@@ -23,34 +23,36 @@ None.
 
 * Install as usual, see http://drupal.org/node/70151 for further information.
 
+* You likely want to disable Toolbar module, since its output clashes with
+  Administration menu.
+
 
 -- CONFIGURATION --
 
-* Configure user permissions in Administer >> User management >> Permissions >>
+* Configure user permissions in Administration » People » Permissions »
   admin_menu module:
 
   - access administration menu
 
-    Users in roles with the "access administration menu" permission will see
+    Users in roles with the "Access administration menu" permission will see
     the administration menu at the top of each page.
 
   - display drupal links
 
-    Users in roles with the "display drupal links" permission will receive
-    links to Drupal.org issue queues for all enabled contributed modules. The
-    issue queue links appear under the administration menu icon.)
+    Users in roles with the "Display drupal links" permission will receive
+    links to drupal.org issue queues for all enabled contributed modules. The
+    issue queue links appear under the administration menu icon.
 
-  Note that the menu items displayed in the administration Menu depend on the
-  actual permissions of the viewing user. For example, the "User management"
-  menu item is not displayed to a user who is not a member of a role with the
-  "administer permissions" and "administer users" permissions.
+  Note that the menu items displayed in the administration menu depend on the
+  actual permissions of the viewing user. For example, the "People" menu item
+  is not displayed to a user who is not a member of a role with the "Administer
+  users" permission.
 
-* Customize the menu settings in Administer >> Site configuration >>
-  Administration menu.
+* Customize the menu settings in Administration » Configuration and modules »
+  Administration » Administration menu.
 
 * To prevent administrative menu items from appearing twice, you may hide the
-  "Navigation" menu block, or move the "Administer" menu items into a separate
-  menu.
+  "Management" menu block.
 
 
 -- CUSTOMIZATION --
@@ -83,7 +85,7 @@ None.
   - Are the "access administration menu" and "access administration pages"
     permissions enabled for the appropriate roles?
 
-  - Does your theme output the $closure variable?
+  - Does html.tpl.php of your theme output the $page_bottom variable?
 
 * If the menu is rendered behind a Flash movie object, add this property to your
   Flash object(s):

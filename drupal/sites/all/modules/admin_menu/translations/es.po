@@ -1,5 +1,5 @@
 # translation of admin_menu-6.x.1.x-dev-es.po to es_ES
-# $Id: es.po,v 1.1.2.3 2008/12/26 03:17:12 sun Exp $
+# $Id: es.po,v 1.2 2008/12/26 03:17:00 sun Exp $
 # LANGUAGE translation of Drupal (general)
 # Copyright YEAR NAME <EMAIL@ADDRESS>
 # Generated from files:
