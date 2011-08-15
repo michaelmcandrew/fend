@@ -1,0 +1,61 @@
+/* Superfish Default skin */
+#superfish {
+	width: 100%;
+}
+#superfish h2 {
+  height: 0;
+  display: none;
+  visibility: hidden;
+}
+
+.region-superfish-menu .block-content {
+	padding: 0;
+}
+
+#superfish .menu {
+  width: 100%;
+  float: left;
+  margin: 0;
+  font-size: 1.2em;
+  background-color: #758F8B;
+}
+#superfish .menu a {
+  height: 36px;
+  line-height: 36px;
+  padding: 0 10px;
+  text-decoration: none;
+  font-weight: bold;
+}
+#superfish .menu a, 
+#superfish .menu a:visited  { 
+  color: #FFF;
+}
+#superfish .menu .menu {
+	font-size: 1em;
+}
+#superfish .menu li li {
+  background: #ffa554;
+}
+#superfish .menu li li li {
+  background: #ffa554;
+}
+#superfish .menu li:hover, 
+#superfish .menu li.sfHover,
+#superfish .menu a:focus, 
+#superfish .menu a:hover, 
+#superfish .menu a:active,
+#superfish .menu a.active {
+  background: #ffa554;
+  outline: 0;
+}
+#superfish .menu li li:hover, 
+#superfish .menu li li.sfHover,
+#superfish .menu li li a:focus, 
+#superfish .menu li li a:hover, 
+#superfish .menu li li a:active,
+#superfish .menu li li a.active {
+  background: #758F8B;
+  outline: 0;
+}
+
+

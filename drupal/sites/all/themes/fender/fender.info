@@ -1,0 +1,22 @@
+name = Fender
+description = A drupal 7 theme for FEND
+package = Core
+version = VERSION
+core = 7.x
+;----------// Style-sheets
+stylesheets[all][] = css/reset.css
+stylesheets[all][] = css/style.css
+stylesheets[all][] = sf/css/superfish.css
+stylesheets[all][] = sf/css/theme.css
+
+;----------// Scripts
+scripts[]          = sf/js/superfish.js
+
+regions[sidebar_first] = Left sidebar
+regions[sidebar_second] = Right sidebar
+regions[content] = Content
+regions[header] = Header
+regions[footer] = Footer
+regions[highlighted] = Highlighted
+regions[help] = Help
+regions[superfish_menu] = Superfish Menu

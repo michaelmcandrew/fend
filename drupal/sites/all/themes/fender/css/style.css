@@ -1,0 +1,136 @@
+.clear { 
+	clear: both;
+}
+
+a:link, a:visited { 
+	color: #FF7800;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+body { 
+	color: #545454;
+	background-color: #CDCDCD;
+	font-family: Verdana, Geneva,sans-serif;
+	font-size: 62.5%;
+}
+
+#wrapper { 
+	width: 930px;
+	padding: 25px 15px 40px;
+	margin: 0 auto;
+	background-color: #fff;
+}
+
+#header { 
+	height: 90px;
+}
+
+a#logo, 
+h2#site-slogan {
+	float: left;
+}
+
+h2#site-slogan {
+	font-size: 2.4em;
+	color: #68719C;
+	font-weight: normal;
+	margin: 28px 0 0 200px;
+}
+
+#main {
+	padding-top: 25px;
+	font-size: 1.3em;
+	clear: both;
+}
+
+#superfish .menu {
+	background-color: transparent !important;
+}
+
+#superfish .menu li {
+	margin-right: 4px;
+	padding: 0 8px;
+	background-color: #758F8B;
+}
+
+#superfish .menu a {
+	font-size: 1.2em;
+	font-weight: normal !important;
+}
+
+#leftCol, #rightCol { 
+	width: 200px;
+	min-height: 1px;
+	float: left;
+	margin: 0 15px 0 0;
+}
+
+ul li.expanded, 
+ul li.leaf  {
+    list-style-image: none;
+    list-style-type: none;
+}
+
+#rightCol { 
+	margin: 0 0 0 15px;
+}
+
+#content { 
+	width: 500px;
+	float: left;
+}
+
+.node-teaser {
+	margin-bottom: 25px;
+}
+
+.node h2 {
+	background-color: #eee;	
+	padding: 6px;
+	margin-bottom: 10px;
+}
+
+.title a {
+	color: #333;
+	font-weight: normal;
+	font-size: 0.8em;
+	display: block;
+}
+
+.node-teaser ul.inline {
+	margin-top: 10px;
+	display: inline-block !important;
+}
+
+.node-teaser ul.inline li {
+	padding: 0 12px 0 0;
+}
+
+
+#search-block-form input { 
+	height: 20px;
+	border: 1px solid #333;
+	padding: 4px;
+}
+
+#search-block-form input#edit-submit {
+	height: 27px;
+	padding: 4px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
