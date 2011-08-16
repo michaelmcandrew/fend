@@ -11,6 +11,10 @@ a:hover {
 	text-decoration: underline;
 }
 
+p {
+	margin: 10px 0;
+}
+
 body { 
 	color: #545454;
 	background-color: #CDCDCD;
@@ -37,7 +41,6 @@ h2#site-slogan {
 h2#site-slogan {
 	font-size: 2.4em;
 	color: #68719C;
-	font-weight: normal;
 	margin: 28px 0 0 200px;
 }
 
@@ -69,13 +72,11 @@ h2#site-slogan {
 
 #hpText h2 {
 	font-size: 1.8em;
-	font-weight: normal;
 	margin-bottom: 4px;
 }
 
 #hpText h3 {
 	font-style: italic;
-	font-weight: normal;
 }
 
 #leftCol, #rightCol { 
@@ -100,7 +101,6 @@ h2#site-slogan {
 #leftCol .block h4, 
 #rightCol .block h4 {
 	font-size: 1.2em;
-	font-weight: normal;
 	margin-bottom: 4px;
 }
 
@@ -119,6 +119,12 @@ ul li.leaf  {
 	float: left;
 }
 
+#page-title {
+	font-size: 1.8em;
+	color: #9D9D9D;
+	font-weight: bold;
+}
+
 .node-teaser {
 	margin-bottom: 25px;
 }
@@ -127,6 +133,7 @@ ul li.leaf  {
 	background-color: #eee;	
 	padding: 6px;
 	margin-bottom: 10px;
+	font-size: 1.2em;
 }
 
 .title a {
@@ -145,6 +152,11 @@ ul li.leaf  {
 	padding: 0 12px 0 0;
 }
 
+#node-7 ul, 
+#node-7 ol {
+	margin-bottom: 20px;
+}
+
 
 #search-block-form input { 
 	height: 20px;
@@ -155,6 +167,17 @@ ul li.leaf  {
 #search-block-form input#edit-submit {
 	height: 27px;
 	padding: 4px;
+}
+
+td, th {
+	padding: 6px;
+	border-color: #CCCCCC;
+    border-style: solid;
+    border-width: 1px 0 0;
+}
+
+th {
+	padding: 6px 8px 6px 2px;
 }
 
 
