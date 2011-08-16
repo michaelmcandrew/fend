@@ -104,6 +104,12 @@
 	<?php print $messages; ?>
 
 	<div id="main">
+		<div id="hpText">
+			<?php if ($page['hp_text']): ?>    
+				<?php print render($page['hp_text']); ?>  		
+			<?php endif; ?>
+		</div>
+			
 		<div id="leftCol">
 			<?php if ($page['sidebar_first']): ?>    
 				<?php print render($page['sidebar_first']); ?>  		
