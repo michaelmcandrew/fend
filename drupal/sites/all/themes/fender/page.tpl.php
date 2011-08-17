@@ -111,8 +111,6 @@
 		</div>
 			
 		<div id="leftCol">
-			<?php print theme('links__system_secondary_menu', array('links' => $secondary_menu, 'attributes' => array('id' => 'secondary_menu', 'class' => array('links', 'inline', 'clearfix')))); ?>
-			
 			<?php if ($page['sidebar_first']): ?>    
 				<?php print render($page['sidebar_first']); ?>  		
 			<?php endif; ?>
