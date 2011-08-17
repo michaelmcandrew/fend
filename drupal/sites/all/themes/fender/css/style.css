@@ -3,6 +3,10 @@
 	clear: both;
 }
 
+.floatLeft {
+	float: left;
+}
+
 a:link, a:visited { 
 	color: #FF7800;
 	text-decoration: none;
@@ -69,6 +73,23 @@ h2#site-slogan {
 	margin: 28px 0 0 200px;
 }
 
+#headerText {
+	float: right;
+	margin-right: 42px;
+	color: #9D9D9D;
+	text-align: center;
+}
+
+#headerText h2 {
+	font-size: 2.6em;
+	margin-bottom: 4px;
+}
+
+#headerText h3 {
+	font-size: 1.4em;
+	font-style: italic;
+}
+
 /*...NAVIGATION...*/
 #superfish .menu {
 	background-color: transparent !important;
@@ -107,22 +128,6 @@ h2#site-slogan {
 .menu-block-1 ul li a.active { 
 	color: #FF7800;
 	font-weight: bold;
-}
-
-/*...HP-TEXT...*/
-#hpText {
-	margin-bottom: 26px;
-	text-align: center;
-	color: #9D9D9D;
-}
-
-#hpText h2 {
-	font-size: 1.8em;
-	margin-bottom: 4px;
-}
-
-#hpText h3 {
-	font-style: italic;
 }
 
 /*...COLUMNS...*/

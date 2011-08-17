@@ -69,20 +69,28 @@
 ?>
 <div id="wrapper">
 	<div id="header">
-		<?php if ($logo): ?>
-	        <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home" id="logo">
-	          <img src="<?php print $logo; ?>" alt="<?php print t('Home'); ?>" />
-	        </a>
-	      <?php endif; ?>
+		<div class="floatLeft">
+			<?php if ($logo): ?>
+		        <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home" id="logo">
+		          <img src="<?php print $logo; ?>" alt="<?php print t('Home'); ?>" />
+		        </a>
+		      <?php endif; ?>
 		
-		<?php if ($site_name || $site_slogan): ?>
-			<?php if ($site_name): ?>
-				<h1><?php print $site_name; ?>	</h1>
+			<?php if ($site_name || $site_slogan): ?>
+				<?php if ($site_name): ?>
+					<h1><?php print $site_name; ?>	</h1>
+				<?php endif; ?>
+				<?php if ($site_slogan): ?>
+					<h2 id="site-slogan"><?php print $site_slogan; ?></h2>
+				<?php endif; ?>
 			<?php endif; ?>
-			<?php if ($site_slogan): ?>
-				<h2 id="site-slogan"><?php print $site_slogan; ?></h2>
+		</div>
+		
+		<div id="headerText">
+			<?php if ($page['header_text']): ?>    
+				<?php print render($page['header_text']); ?>  		
 			<?php endif; ?>
-		<?php endif; ?>
+		</div>
 
 		<?php print render($page['header']); ?>
 	</div>
@@ -104,11 +112,11 @@
 	<?php print $messages; ?>
 
 	<div id="main">
-		<div id="hpText">
-			<?php if ($page['hp_text']): ?>    
-				<?php print render($page['hp_text']); ?>  		
-			<?php endif; ?>
-		</div>
+		<!-- <div id="hpText">
+					<?php if ($page['hp_text']): ?>    
+						<?php print render($page['hp_text']); ?>  		
+					<?php endif; ?>
+				</div> -->
 			
 		<div id="leftCol">
 			<?php if ($page['sidebar_first']): ?>    
