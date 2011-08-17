@@ -36,11 +36,11 @@ body {
 }
 
 #header { 
-	height: 90px;
+	height: 100px;
 }
 
 #main {
-	padding-top: 25px;
+	padding-top: 35px;
 	font-size: 1.3em;
 	clear: both;
 }
