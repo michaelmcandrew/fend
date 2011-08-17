@@ -1,3 +1,4 @@
+/*...BASICS...*/
 .clear { 
 	clear: both;
 }
@@ -15,6 +16,7 @@ p {
 	margin: 10px 0;
 }
 
+/*...STRUCTURE...*/
 body { 
 	color: #545454;
 	background-color: #CDCDCD;
@@ -33,6 +35,29 @@ body {
 	height: 90px;
 }
 
+#main {
+	padding-top: 25px;
+	font-size: 1.3em;
+	clear: both;
+}
+
+#leftCol, #rightCol { 
+	width: 200px;
+	min-height: 1px;
+	float: left;
+	margin: 0 15px 0 0;
+}
+
+#rightCol { 
+	margin: 0 0 0 15px;
+}
+
+#content { 
+	width: 500px;
+	float: left;
+}
+
+/*...HEADER...*/
 a#logo, 
 h2#site-slogan {
 	float: left;
@@ -44,6 +69,7 @@ h2#site-slogan {
 	margin: 28px 0 0 200px;
 }
 
+/*...NAVIGATION...*/
 #superfish .menu {
 	background-color: transparent !important;
 }
@@ -58,12 +84,28 @@ h2#site-slogan {
 	font-weight: normal !important;
 }
 
-#main {
-	padding-top: 25px;
-	font-size: 1.3em;
-	clear: both;
+/*...SUB-NAVIGATION...*/
+.menu-block-1 ul li {
+	list-style: none outside none; 
+	margin-bottom: 2px;
 }
 
+.menu-block-1 ul li ul li {
+	margin-left: 10px;
+}
+
+.menu-block-1 ul li a {
+	padding-left: 10px;
+	display: inline-block;
+	background: url(../images/orange-arrow-2.png) no-repeat 0 6px;
+}
+
+.menu-block-1 ul li a.active { 
+	color: #FF7800;
+	font-weight: bold;
+}
+
+/*...HP-TEXT...*/
 #hpText {
 	margin-bottom: 26px;
 	text-align: center;
@@ -79,13 +121,7 @@ h2#site-slogan {
 	font-style: italic;
 }
 
-#leftCol, #rightCol { 
-	width: 200px;
-	min-height: 1px;
-	float: left;
-	margin: 0 15px 0 0;
-}
-
+/*...COLUMNS...*/
 #leftCol .block, 
 #rightCol .block {
 	margin-bottom: 8px;
@@ -104,29 +140,11 @@ h2#site-slogan {
 	margin-bottom: 4px;
 }
 
-ul li.expanded, 
-ul li.leaf  {
-    list-style-image: none;
-    list-style-type: none;
-}
-
-#rightCol { 
-	margin: 0 0 0 15px;
-}
-
-#content { 
-	width: 500px;
-	float: left;
-}
-
+/*...TITLES...*/
 #page-title {
 	font-size: 1.8em;
 	color: #9D9D9D;
 	font-weight: bold;
-}
-
-.node-teaser {
-	margin-bottom: 25px;
 }
 
 .node h2 {
@@ -143,6 +161,12 @@ ul li.leaf  {
 	display: block;
 }
 
+
+/*...NODE STYLES...*/
+.node-teaser {
+	margin-bottom: 25px;
+}
+
 .node-teaser ul.inline {
 	margin-top: 10px;
 	display: inline-block !important;
@@ -157,7 +181,7 @@ ul li.leaf  {
 	margin-bottom: 20px;
 }
 
-
+/*...SEARCH FORM...*/
 #search-block-form input { 
 	height: 20px;
 	border: 1px solid #333;
@@ -169,6 +193,8 @@ ul li.leaf  {
 	padding: 4px;
 }
 
+
+/*...TABLE STYLES...*/
 td, th {
 	padding: 6px;
 	border-color: #CCCCCC;

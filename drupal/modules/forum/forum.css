@@ -1,4 +1,4 @@
-
+/*
 #forum .description {
   font-size: 0.9em;
   margin: 0.5em;
@@ -12,8 +12,8 @@
   white-space: nowrap;
 }
 #forum tr td.forum {
-  padding-left: 25px; /* LTR */
-  background-position: 2px 2px; /* LTR */
+  padding-left: 25px; /* LTR 
+  background-position: 2px 2px; /* LTR 
   background-image: url(../../misc/forum-default.png);
   background-repeat: no-repeat;
 }
@@ -44,3 +44,4 @@
 #forum .icon .topic-status-closed {
   background-position: -120px 0;
 }
+*/
