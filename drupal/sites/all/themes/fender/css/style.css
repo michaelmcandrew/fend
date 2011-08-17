@@ -87,7 +87,7 @@ h2#site-slogan {
 /*...SUB-NAVIGATION...*/
 .menu-block-1 ul li {
 	list-style: none outside none; 
-	margin-bottom: 2px;
+	margin: 0 0 4px 2px;
 }
 
 .menu-block-1 ul li ul li {
@@ -95,8 +95,12 @@ h2#site-slogan {
 }
 
 .menu-block-1 ul li a {
-	padding-left: 10px;
+	padding-left: 14px;
 	display: inline-block;
+	background: url(../images/orange-arrow-3.png) no-repeat 0 6px;
+}
+
+.menu-block-1 ul li ul li a {
 	background: url(../images/orange-arrow-2.png) no-repeat 0 6px;
 }
 
@@ -161,7 +165,6 @@ h2#site-slogan {
 	display: block;
 }
 
-
 /*...NODE STYLES...*/
 .node-teaser {
 	margin-bottom: 25px;
@@ -192,7 +195,6 @@ h2#site-slogan {
 	height: 27px;
 	padding: 4px;
 }
-
 
 /*...TABLE STYLES...*/
 td, th {
