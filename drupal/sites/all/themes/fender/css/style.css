@@ -28,11 +28,18 @@ body {
 	font-size: 62.5%;
 }
 
-#wrapper { 
+#wrapper, 
+#footer { 
 	width: 930px;
-	padding: 25px 15px 40px;
 	margin: 0 auto;
+	padding: 10px 15px 40px;
 	background-color: #fff;
+}
+
+#footer {
+	margin-bottom: 30px;
+	padding: 10px 15px;
+	border-top: 1px solid #707969;
 }
 
 #header { 
@@ -57,9 +64,17 @@ body {
 }
 
 #content { 
-	width: 500px;
 	float: left;
 }
+
+.has-right-col {
+	width: 500px;
+}
+
+.no-right-col {
+	width: 715px;
+}
+
 
 /*...HEADER...*/
 a#logo, 
@@ -128,6 +143,11 @@ h2#site-slogan {
 .menu-block-1 ul li a.active { 
 	color: #FF7800;
 	font-weight: bold;
+}
+
+/*...FEATURE AREA...*/
+#featureArea {
+	
 }
 
 /*...COLUMNS...*/

@@ -111,20 +111,21 @@
 	
 	<?php print $messages; ?>
 
-	<div id="main">
-		<!-- <div id="hpText">
-					<?php if ($page['hp_text']): ?>    
-						<?php print render($page['hp_text']); ?>  		
-					<?php endif; ?>
-				</div> -->
+	<div id="main">	
+		<?php if ($page['feature_area']): ?>    
+			<div id="featureArea">
+				<?php print render($page['feature_area']); ?>
+			</div>  		
+		<?php endif; ?>
+		
 			
 		<div id="leftCol">
 			<?php if ($page['sidebar_first']): ?>    
 				<?php print render($page['sidebar_first']); ?>  		
 			<?php endif; ?>
 		</div>
-
-		<div id="content">
+	
+		<div id="content" class="<?php if ($page['sidebar_second']) { echo 'has-right-col'; } else { echo "no-right-col"; } ?>"
 			<?php if ($title): ?>
 				<h2 class="title" id="page-title">
 					<?php print $title; ?>
@@ -134,14 +135,18 @@
 			<?php print render($page['content']); ?>
 		</div>
 	
-		<div id="rightCol">			
-			<?php if ($page['sidebar_second']): ?>    
+		<?php if ($page['sidebar_second']): ?>    
+			<div id="rightCol">			
 				<?php print render($page['sidebar_second']); ?>  		
-			<?php endif; ?>
-		</div>
+			</div>
+		<?php endif; ?>
+		
 		<div class="clear"></div>
 	</div>
 
-	<div id="footer"></div>
 	<div class="clear"></div>
+</div>
+
+<div id="footer">
+	<?php print render($page['footer']); ?>
 </div>
