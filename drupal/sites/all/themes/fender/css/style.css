@@ -209,6 +209,16 @@ h2#site-slogan {
 	margin-bottom: 20px;
 }
 
+/*...BLOCK STYLES...*/
+#block-system-user-menu h2 {
+	display: none;
+	visibility: hidden;
+}
+
+#block-system-user-menu ul li.leaf {
+	list-style: none outside none;
+}
+
 /*...SEARCH FORM...*/
 #search-block-form input { 
 	height: 20px;
