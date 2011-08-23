@@ -126,6 +126,12 @@
 		</div>
 	
 		<div id="content" class="<?php if ($page['sidebar_second']) { echo 'has-right-col'; } else { echo "no-right-col"; } ?>"
+			<?php if ($page['content_top']): ?>    
+				<div id="contentTop">			
+					<?php print render($page['content_top']); ?>  		
+				</div>
+			<?php endif; ?>
+			
 			<?php if ($title): ?>
 				<h2 class="title" id="page-title">
 					<?php print $title; ?>

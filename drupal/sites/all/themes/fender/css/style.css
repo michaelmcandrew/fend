@@ -232,6 +232,10 @@ h2#site-slogan {
 }
 
 /*...TABLE STYLES...*/
+table { 
+	width: 100%;
+}
+	
 td, th {
 	padding: 6px;
 	border-color: #CCCCCC;

@@ -22,3 +22,4 @@ regions[help] = Help
 regions[superfish_menu] = Superfish Menu
 regions[header_text] = Header text
 regions[feature_area] = Feature Area
+regions[content_top] = Content top
