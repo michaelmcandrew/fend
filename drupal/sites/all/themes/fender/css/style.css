@@ -32,13 +32,13 @@ body {
 #footer { 
 	width: 930px;
 	margin: 0 auto;
-	padding: 10px 15px 40px;
+	padding: 20px 15px 40px;
 	background-color: #fff;
 }
 
 #footer {
 	margin-bottom: 30px;
-	padding: 10px 15px;
+	padding: 10px 15px 20px 15px;
 	border-top: 1px solid #707969;
 }
 
@@ -47,7 +47,7 @@ body {
 }
 
 #main {
-	padding-top: 35px;
+	padding-top: 30px;
 	font-size: 1.3em;
 	clear: both;
 }
@@ -122,22 +122,17 @@ h2#site-slogan {
 
 /*...SUB-NAVIGATION...*/
 .menu-block-1 ul li {
-	list-style: none outside none; 
 	margin: 0 0 4px 2px;
+	color: #ff7800;
+	list-style: none outside none;
 }
 
 .menu-block-1 ul li ul li {
 	margin-left: 10px;
 }
 
-.menu-block-1 ul li a {
-	padding-left: 14px;
-	display: inline-block;
-	background: url(../images/orange-arrow-3.png) no-repeat 0 6px;
-}
-
-.menu-block-1 ul li ul li a {
-	background: url(../images/orange-arrow-2.png) no-repeat 0 6px;
+.menu-block-1 ul li ul li.leaf {
+	list-style: disc outside none;
 }
 
 .menu-block-1 ul li a.active { 
@@ -147,7 +142,7 @@ h2#site-slogan {
 
 /*...FEATURE AREA...*/
 #featureArea {
-	padding: 5px 0 10px;
+	padding-bottom: 20px;
 }
 
 /*...COLUMNS...*/
@@ -155,7 +150,8 @@ h2#site-slogan {
 #rightCol .block {
 	margin-bottom: 8px;
 	padding: 6px;
-	background: url(../images/grad.jpg) repeat-x 0 0;
+/*	background: url(../images/grad.jpg) repeat-x 0 0; */
+	border-top: 1px solid #758F8B;
 }
 
 #leftCol #block-block-17 .content {

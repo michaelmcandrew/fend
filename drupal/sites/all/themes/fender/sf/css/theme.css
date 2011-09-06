@@ -34,10 +34,10 @@
 	font-size: 1em;
 }
 #superfish .menu li li {
-  background: #ffa554;
+  background: #758F8B;
 }
 #superfish .menu li li li {
-  background: #ffa554;
+  background: #758F8B;
 }
 #superfish .menu li:hover, 
 #superfish .menu li.sfHover,
@@ -54,7 +54,7 @@
 #superfish .menu li li a:hover, 
 #superfish .menu li li a:active,
 #superfish .menu li li a.active {
-  background: #758F8B;
+  background: #ffa554;
   outline: 0;
 }
 
