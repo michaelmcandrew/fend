@@ -121,8 +121,13 @@ h2#site-slogan {
 }
 
 /*...SUB-NAVIGATION...*/
+.menu-block-1 {
+	padding-bottom: 20px;
+}
+
 .menu-block-1 ul li {
 	margin: 0 0 4px 2px;
+	padding: 5px 0 0 0;
 	color: #ff7800;
 	list-style: none outside none;
 }
