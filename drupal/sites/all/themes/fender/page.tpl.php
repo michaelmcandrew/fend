@@ -133,9 +133,9 @@
 			<?php endif; ?>
 			
 			<?php if ($title): ?>
-				<h2 class="title" id="page-title">
+				<h1 class="title" id="page-title">
 					<?php print $title; ?>
-				</h2>
+				</h1>
 			<?php endif; ?>
 			<?php if ($tabs): ?><?php print render($tabs); ?><?php endif; ?>
 			<?php print render($page['content']); ?>
