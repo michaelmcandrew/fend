@@ -121,14 +121,19 @@ h2#site-slogan {
 }
 
 /*...SUB-NAVIGATION...*/
+.menu-block-1 {
+	padding-bottom: 20px;
+}
+
 .menu-block-1 ul li {
 	margin: 0 0 4px 2px;
+	padding: 5px 0 0 0;
 	color: #ff7800;
 	list-style: none outside none;
 }
 
-.menu-block-1 ul li ul li {
-	margin-left: 10px;
+.menu-block-1 .menu .menu {
+	margin-left: 15px;
 }
 
 .menu-block-1 ul li ul li.leaf {
@@ -150,8 +155,9 @@ h2#site-slogan {
 #rightCol .block {
 	margin-bottom: 8px;
 	padding: 6px;
-/*	background: url(../images/grad.jpg) repeat-x 0 0; */
-	border-top: 1px solid #758F8B;
+	/*background: url(../images/grad.jpg) repeat-x 0 0;*/
+	/*border-top: 1px solid #758F8B;*/
+	background: #D9E8E3;
 }
 
 #leftCol #block-block-17 .content {
@@ -166,17 +172,17 @@ h2#site-slogan {
 }
 
 /*...TITLES...*/
-#page-title {
-	font-size: 1.8em;
-	color: #9D9D9D;
-	font-weight: bold;
-}
-
-.node h2 {
+#page-title,
+#content h2 {
 	background-color: #eee;	
 	padding: 6px;
 	margin-bottom: 10px;
 	font-size: 1.2em;
+}
+
+#page-title {
+	font-size: 1.6em;
+	font-weight: bold;
 }
 
 .title a {
