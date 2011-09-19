@@ -256,6 +256,15 @@ label {
 	font-weight: normal;
 }
 
+/*...FOOTER...*/
+.credit {
+	color: #9D9D9D;
+}
+
+.credit:hover {
+	color: #545454;
+}
+
 
 
 
