@@ -2,22 +2,26 @@
 .clear { 
 	clear: both;
 }
-
 .floatLeft {
 	float: left;
 }
-
 a:link, a:visited { 
 	color: #FF7800;
 	text-decoration: none;
 }
-
 a:hover {
 	text-decoration: underline;
 }
-
 p {
 	margin: 10px 0;
+}
+#content ul, 
+#content ol {
+	list-style: disc outside none;
+	margin: 7px 0 7px 20px;
+}
+#content ol {
+	list-style: decimal outside none;
 }
 
 /*...STRUCTURE...*/
@@ -27,122 +31,129 @@ body {
 	font-family: Verdana, Geneva,sans-serif;
 	font-size: 62.5%;
 }
-
 #wrapper, 
 #footer { 
 	width: 930px;
 	margin: 0 auto;
-	padding: 20px 15px 40px;
+	padding: 0 15px 40px;
 	background-color: #fff;
 }
-
 #footer {
 	margin-bottom: 30px;
 	padding: 10px 15px 20px 15px;
 	border-top: 1px solid #707969;
 }
-
 #header { 
-	height: 100px;
+	overflow: hidden;
+	margin-bottom: 30px;
 }
-
 #main {
 	padding-top: 30px;
 	font-size: 1.3em;
 	clear: both;
 }
-
 #leftCol, #rightCol { 
 	width: 200px;
 	min-height: 1px;
 	float: left;
 	margin: 0 15px 0 0;
 }
-
 #rightCol { 
 	margin: 0 0 0 15px;
 }
-
 #content { 
 	float: left;
 }
-
 .has-right-col {
 	width: 500px;
 }
-
 .no-right-col {
 	width: 715px;
 }
-
 
 /*...HEADER...*/
 a#logo, 
 h2#site-slogan {
 	float: left;
 }
-
 h2#site-slogan {
 	font-size: 2.4em;
 	color: #68719C;
 	margin: 28px 0 0 200px;
 }
-
 #headerText {
 	float: right;
 	margin-right: 42px;
 	color: #9D9D9D;
 	text-align: center;
 }
-
 #headerText h2 {
 	font-size: 2.6em;
 	margin-bottom: 4px;
 }
-
 #headerText h3 {
 	font-size: 1.4em;
 	font-style: italic;
+}
+.region-header {
+	height: 20px;
+	overflow: hidden;
+	margin-bottom: 30px;
+}
+#block-system-user-menu {
+	float: right;
+	text-align: right;
+}
+#block-system-user-menu li a {
+	background-color: #D9E8E3;
+	color: #545454;
+	padding: 5px;
+}
+
+#block-system-user-menu li a:hover {
+	background-color: #ffa554;
+	color: #fff;
+	text-decoration: none;
 }
 
 /*...NAVIGATION...*/
 #superfish .menu {
 	background-color: transparent !important;
 }
-
 #superfish .menu li {
 	margin-right: 4px;
 	background-color: #758F8B;
 }
-
 #superfish .menu a {
 	font-size: 1.2em;
 	font-weight: normal !important;
+}
+#superfish .menu li li {
+	border-top: 1px solid #fff;
 }
 
 /*...SUB-NAVIGATION...*/
 .menu-block-1 {
 	padding-bottom: 20px;
 }
-
 .menu-block-1 ul li {
 	margin: 0 0 4px 2px;
 	padding: 5px 0 0 0;
 	color: #ff7800;
 	list-style: none outside none;
 }
-
 .menu-block-1 .menu .menu {
 	margin-left: 15px;
 }
-
 .menu-block-1 ul li ul li.leaf {
 	list-style: disc outside none;
 }
-
 .menu-block-1 ul li a.active { 
-	color: #FF7800;
+	color: #545454;
 	font-weight: bold;
+}
+.menu-block-1 ul li a.active:hover {
+	text-decoration: none;
 }
 
 /*...FEATURE AREA...*/
@@ -159,12 +170,10 @@ h2#site-slogan {
 	/*border-top: 1px solid #758F8B;*/
 	background: #D9E8E3;
 }
-
 #leftCol #block-block-17 .content {
 	width: 160px;
 	margin: 0 auto;
 }
-
 #leftCol .block h4, 
 #rightCol .block h4 {
 	font-size: 1.2em;
@@ -172,6 +181,7 @@ h2#site-slogan {
 }
 
 /*...TITLES...*/
+.title,
 #page-title,
 #content h2 {
 	background-color: #eee;	
@@ -179,12 +189,11 @@ h2#site-slogan {
 	margin-bottom: 10px;
 	font-size: 1.2em;
 }
-
+.title,
 #page-title {
 	font-size: 1.6em;
 	font-weight: bold;
 }
-
 .title a {
 	color: #333;
 	font-weight: normal;
@@ -196,16 +205,13 @@ h2#site-slogan {
 .node-teaser {
 	margin-bottom: 25px;
 }
-
 .node-teaser ul.inline {
 	margin-top: 10px;
 	display: inline-block !important;
 }
-
 .node-teaser ul.inline li {
 	padding: 0 12px 0 0;
 }
-
 #node-7 ul, 
 #node-7 ol {
 	margin-bottom: 20px;
@@ -216,7 +222,6 @@ h2#site-slogan {
 	display: none;
 	visibility: hidden;
 }
-
 #block-system-user-menu ul li.leaf {
 	list-style: none outside none;
 }
@@ -227,7 +232,6 @@ h2#site-slogan {
 	border: 1px solid #333;
 	padding: 4px;
 }
-
 #search-block-form input#edit-submit {
 	height: 27px;
 	padding: 4px;
@@ -236,17 +240,20 @@ h2#site-slogan {
 /*...TABLE STYLES...*/
 table { 
 	width: 100%;
-}
-	
+}	
 td, th {
 	padding: 6px;
 	border-color: #CCCCCC;
     border-style: solid;
     border-width: 1px 0 0;
 }
-
 th {
 	padding: 6px 8px 6px 2px;
+}
+
+/*...FORM STYLES...*/
+label {
+	font-weight: normal;
 }
 
 
