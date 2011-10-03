@@ -69,6 +69,7 @@
 ?>
 <div id="wrapper">
 	<div id="header">
+		<?php print render($page['header']); ?>
 		<div class="floatLeft">
 			<?php if ($logo): ?>
 		        <a href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>" rel="home" id="logo">
@@ -91,8 +92,6 @@
 				<?php print render($page['header_text']); ?>  		
 			<?php endif; ?>
 		</div>
-
-		<?php print render($page['header']); ?>
 	</div>
 	
 	<div id="nav">
