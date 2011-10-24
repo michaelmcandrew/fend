@@ -1,5 +1,7 @@
-<?php 
-
+<?php
+error_reporting(E_ALL);
+ini_set('display_errors', TRUE);
+ini_set('display_startup_errors', TRUE);
 /*
  +--------------------------------------------------------------------+
  | CiviCRM version 2.2                                                |
@@ -33,51 +35,38 @@
  *
  */
 
-//require_once 'CRM/Contribute/Payment.php';
-require_once 'CRM/Core/Payment/ProtX.php';
+session_start( );
 
-class CRM_Event_Payment_ProtX extends CRM_Core_Payment_ProtX {
-    /** 
-     * We only need one instance of this object. So we use the singleton 
-     * pattern and cache the instance in this variable 
-     * 
-     * @var object 
-     * @static 
-     */ 
-    static private $_singleton = null; 
-    
-    /** 
-     * Constructor 
-     * 
-     * @param string $mode the mode of operation: live or test
-     *
-     * @return void 
-     */ 
-    function __construct( $mode, &$paymentProcessor ) {
-        parent::__construct( $mode, $paymentProcessor );
-    }
+require_once '../civicrm.config.php';
+require_once 'CRM/Core/Config.php';
 
-    /** 
-     * singleton function used to manage this object 
-     * 
-     * @param string $mode the mode of operation: live or test
-     * 
-     * @return object 
-     * @static 
-     * 
-     */ 
-    static function &singleton( $mode, &$paymentProcessor ) {
-        $processorName = $paymentProcessor['name'];
-        if (self::$_singleton[$processorName] === null ) { 
-            self::$_singleton[$processorName] =& new CRM_Event_Payment_ProtX( $mode, $paymentProcessor );
-        } 
-        return self::$_singleton[$processorName]; 
-    } 
+/* Cache the real UF, override it with the SOAP environment */
+$config =& CRM_Core_Config::singleton();
 
-    function doTransferCheckout( &$params ) {
-        parent::doTransferCheckout( $params, 'event' );
-    }
+require_once 'CRM/Utils/Array.php';
 
-}
+CRM_Core_Error::debug_log_message( "protXresult _GET=".$_GET);
 
+$value = CRM_Utils_Array::value( 'module', $_GET );
 
+CRM_Core_Error::debug_log_message( "value=".$value);
+
+require_once 'CRM/Core/Payment/ProtXResult.php';
+
+$protX = new CRM_Core_Payment_ProtXResult( );
+
+switch ( $value ) {
+ case 'contribute':
+     $protX->main( 'contribute' );
+     CRM_Core_Error::debug_log_message( "Update for contribute" );
+     break;
+ case 'event':
+     $protX->main( 'event' );
+     CRM_Core_Error::debug_log_message( "Update for event" );
+     break;
+ default     :
+     require_once 'CRM/Core/Error.php';
+     CRM_Core_Error::debug_log_message( "Could not get module name from request url" );
+     echo "Could not get module name from request url<p>";
+     break;
+ }

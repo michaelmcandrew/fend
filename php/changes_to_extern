@@ -1,0 +1,8 @@
+Peter McAndrew, 6 October 2011
+
+The file:
+
+drupal/sites/all/modules/civicrm/extern/protXresult.php
+
+
+... has been added for the payment processor to call back on.
