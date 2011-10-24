@@ -34,19 +34,6 @@ function i18n_string_admin_refresh_form() {
     '#value' => t('Refresh strings'),
     '#suffix' => '<p>' . t('This will create all the missing strings for the selected text groups.') . '</p>',
   );
-  // Get all languages, except default language.
-  $languages = locale_language_list('name', TRUE);
-  unset($languages[language_default('language')]);
-  $form['languages'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Select languages'),
-    '#options' => $languages,
-  );
-  $form['update'] = array(
-    '#type' => 'submit',
-    '#value' => t('Update translations'),
-    '#suffix' => '<p>' . t('This will fetch all existing translations from the localization tables for the selected text groups and languages.') . '</p>',
-  );
   return $form;
 }
 
@@ -56,55 +43,13 @@ function i18n_string_admin_refresh_form() {
 function i18n_string_admin_refresh_form_submit($form, &$form_state) {
   $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
   $groups = array_filter($form_state['values']['groups']);
-  $languages = array_filter($form_state['values']['languages']);
   $group_names = module_invoke_all('locale', 'groups');
   if ($op == t('Refresh strings') && $groups) {
     $batch = i18n_string_refresh_batch($groups, $form_state['values']['delete']);
     batch_set($batch);
   }
-  elseif ($op == t('Update translations') && $groups && $languages) {
-    $count = 0;
-    foreach ($languages as $language) {
-      $count += i18n_string_admin_update($language, $groups);
-    }
-    drupal_set_message(format_plural($count, '1 string has been updated.', '@count strings have been updated.'));
-  }
 }
 
-/**
- * Update strings for language.
- */
-function i18n_string_admin_update($language, $groups) {
-  $query = db_select('locales_source', 'g')
-    ->fields('g')
-    ->fields('t', array('translation'))
-    ->fields('i', array('format'))
-    ->condition('t2.lid', NULL)
-    ->condition('g.textgroup', $groups)
-    ->condition('t.language', $language);
-  $query->addField('t', 'lid', 'tlid');
-  $query->join('locales_source', 's', 'g.source = s.source AND s.lid <> g.lid');
-  $query->join('locales_target', 't', 's.lid = t.lid');
-  $query->join('locales_target', 't2', 'g.lid = t2.lid');
-  $query->join('i18n_string', 'i', 'i.lid = g.lid');
-  $result = $query->execute()->fetchAll(PDO::FETCH_OBJ);
-
-  $count = 0;
-  foreach ($result as $string) {
-    // Just update strings when no text format, otherwise it could be dangerous under some circumstances.
-    if (empty($string->format) && !empty($string->translation)) {
-      $count++;
-      db_insert(locales_target)
-      ->fields(array(
-        'translation' => $string->translation,
-        'lid' => $string->lid,
-        'language' => $language,
-      ))
-      ->execute();
-    }
-  }
-  return $count;
-}
 
 /**
  * Refresh all user defined strings for a given text group.
@@ -366,4 +311,137 @@ function i18n_string_module_string_list($module) {
     }
   }
   return $strings;
+}
+
+/**
+ * User interface for string editing.
+ */
+function i18n_string_locale_translate_edit_form($form, &$form_state, $lid) {
+  // Fetch source string, if possible.
+  $source = db_query('SELECT source, context, textgroup, location FROM {locales_source} WHERE lid = :lid', array(':lid' => $lid))->fetchObject();
+  if (!$source) {
+    drupal_set_message(t('String not found.'), 'error');
+    drupal_goto('admin/config/regional/translate/translate');
+  }
+
+  // Add original text to the top and some values for form altering.
+  $form['original'] = array(
+    '#type'  => 'item',
+    '#title' => t('Original text'),
+    '#markup' => check_plain(wordwrap($source->source, 0)),
+  );
+  if (!empty($source->context)) {
+    $form['context'] = array(
+      '#type' => 'item',
+      '#title' => t('Context'),
+      '#markup' => check_plain($source->context),
+    );
+  }
+  $form['lid'] = array(
+    '#type'  => 'value',
+    '#value' => $lid
+  );
+  $form['textgroup'] = array(
+    '#type'  => 'value',
+    '#value' => $source->textgroup,
+  );
+  $form['location'] = array(
+    '#type'  => 'value',
+    '#value' => $source->location
+  );
+
+  // Include default form controls with empty values for all languages.
+  // This ensures that the languages are always in the same order in forms.
+  $languages = language_list();
+
+  // We don't need the default language value, that value is in $source.
+  $omit = $source->textgroup == 'default' ? 'en' : i18n_string_source_language();
+  unset($languages[($omit)]);
+  $form['translations'] = array('#tree' => TRUE);
+  // Approximate the number of rows to use in the default textarea.
+  $rows = min(ceil(str_word_count($source->source) / 12), 10);
+  foreach ($languages as $langcode => $language) {
+    $form['translations'][$langcode] = array(
+      '#type' => 'textarea',
+      '#title' => t($language->name),
+      '#rows' => $rows,
+      '#default_value' => '',
+    );
+  }
+
+  // Fetch translations and fill in default values in the form.
+  $result = db_query("SELECT DISTINCT translation, language FROM {locales_target} WHERE lid = :lid AND language <> :omit", array(':lid' => $lid, ':omit' => $omit));
+  foreach ($result as $translation) {
+    $form['translations'][$translation->language]['#default_value'] = $translation->translation;
+  }
+
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array('#type' => 'submit', '#value' => t('Save translations'));
+  
+  // Restrict filter permissions and handle validation and submission for i18n strings
+  $context = db_select('i18n_string', 'i18ns')
+    ->fields('i18ns')
+    ->condition('lid', $form['lid']['#value'])
+    ->execute()
+    ->fetchObject();
+  if ($source->textgroup != 'default' && $context) {
+    $form['i18n_string_context'] = array('#type' => 'value', '#value' => $context);
+    if ($context->format) {
+      $formats = filter_formats();
+      $format = $formats[$context->format];
+      $disabled = !filter_access($format);
+      if ($disabled) {
+        drupal_set_message(t('This string uses the %name text format. You are not allowed to translate or edit texts with this format.', array('%name' => $format->name)), 'warning');
+      }
+      foreach (element_children($form['translations']) as $langcode) {
+        $form['translations'][$langcode]['#disabled'] = $disabled;
+      }
+      $form['translations']['format_help'] = array(
+        '#type' => 'markup',
+        '#markup' => '<h5>' . t('Text format: @name', array('@name' => $format->name)) . '</h5>' . theme('filter_tips', array('tips' => _filter_tips($context->format, FALSE))),
+      );
+      $form['submit']['#disabled'] = $disabled;
+    }
+  }
+  return $form;
+}
+
+/**
+ * Process string editing form validations.
+ *
+ * If it is an allowed format, skip default validation, the text will be filtered later
+ */
+function i18n_string_locale_translate_edit_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['i18n_string_context']) || empty($form_state['values']['i18n_string_context']->format)) {
+    // If not text format use regular validation for all strings
+    $copy_state = $form_state;
+    $copy_state['values']['textgroup'] = 'default';
+    module_load_include('admin.inc', 'locale');
+    locale_translate_edit_form_validate($form, $copy_state);
+  }
+  elseif (!i18n_string_translate_access($form_state['values']['i18n_string_context'])) {
+    form_set_error('translations', t('You are not allowed to translate or edit texts with this text format.'));
+  }
+}
+
+/**
+ * Process string editing form submissions.
+ *
+ * Mark translations as current.
+ */
+function i18n_string_locale_translate_edit_form_submit($form, &$form_state) {
+  // Invoke locale submission.
+  module_load_include('admin.inc', 'locale');
+  locale_translate_edit_form_submit($form, $form_state);
+  $lid = $form_state['values']['lid'];
+  foreach ($form_state['values']['translations'] as $key => $value) {
+    if (!empty($value)) {
+      // An update has been made, so we assume the translation is now current.
+      db_update('locales_target')
+        ->fields(array('i18n_status' => I18N_STRING_STATUS_CURRENT))
+        ->condition('lid', $lid)
+        ->condition('language', $key)
+        ->execute();
+    }
+  }
 }

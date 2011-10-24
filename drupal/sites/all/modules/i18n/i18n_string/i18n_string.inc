@@ -203,7 +203,8 @@ class i18n_string_object {
     elseif (!isset($this->lid) || !isset($this->source)) {
       // We may have lid from loading a translation but not loaded the source yet.
       if ($source = $this->textgroup()->load_source($this)) {
-        $this->set_properties($source, FALSE);
+        // Set properties but don't override existing ones
+        $this->set_properties($source, FALSE, FALSE);
         if (!isset($this->string)) {
           $this->string = $source->source;
         }
@@ -226,10 +227,12 @@ class i18n_string_object {
    *   Obejct or array of properties
    * @param $set_null
    *   Whether to set null properties too
+   * @param $override
+   *   Whether to set properties that are already set in this object
    */
-  public function set_properties($properties, $set_null = TRUE) {
+  public function set_properties($properties, $set_null = TRUE, $override = TRUE) {
     foreach ((array)$properties as $field => $value) {
-      if (property_exists($this, $field) && ($set_null || isset($value))) {
+      if (property_exists($this, $field) && ($set_null || isset($value)) && ($override || !isset($this->$field))) {
         $this->$field = $value;
       }
     }
@@ -287,7 +290,7 @@ class i18n_string_textgroup_default {
    * 
    * @param $context
    *   Context array or string
-   * @param $string
+   * @param $string string
    *   Current value for string source
    */
   public function build_string($context, $string = NULL) {
@@ -450,7 +453,7 @@ class i18n_string_textgroup_default {
         watchdog('i18n_string', 'Deleted string %location for text group %textgroup: %string', $i18nstring->get_args());
       }
       if ($options['messages']) {
-        drupal_set_message(t('Deleted string %location for tex tgroup %textgroup: %string', $i18nstring->get_args()));
+        drupal_set_message(t('Deleted string %location for text group %textgroup: %string', $i18nstring->get_args()));
       }
       return SAVED_DELETED;
     }
@@ -815,9 +818,17 @@ class i18n_string_textgroup_default {
   /**
    * Search multiple translations with key combinations.
    * 
-   * @param $context array()
-   *   String context conditions.
-   *   Each context field may be a single value, an array of values or '*'
+   * Each $context field may be a single value, an array of values or '*'.
+   * Example:
+   * 	array('term', array(1,2), '*')
+   * This will be mapped into the following conditions (provided language code is 'es')
+   *  array('type' => 'term', 'objectid' => array(1,2), 'property' => '*', 'language' => 'es')
+   * And will result in these combinations to search for
+   *  array('type' => 'term', 'objectid' => 1, 'property' => '*', 'language' => 'es')
+   *  array('type' => 'term', 'objectid' => 2, 'property' => '*', 'language' => 'es')
+   * 
+   * @param $context array
+   *   Array with String context conditions.
    *   
    * @return
    *   Array of translation objects indexed by context.
@@ -835,18 +846,18 @@ class i18n_string_textgroup_default {
         $translations += $cached;
       }
       else {
-        // Not in cache, add to search conditions.
-        $search = array_merge_recursive($search, $combination);
+        // Not in cache, add to search conditions skipping duplicated values.
+        // As array_merge_recursive() has some bug in PHP 5.2, http://drupal.org/node/1244598
+        // we use our simplified version here, instead of $search = array_merge_recursive($search, $combination);
+        foreach ($combination as $key => $value) {
+          if (!isset($search[$key]) || !in_array($value, $search[$key], TRUE)) {
+            $search[$key][] = $value;
+          }
+        }
       }
     }
     // If we've got any search values left, find translations.
     if ($search) {
-      // Prepare conditions for search, de-dupe conditions values.
-      foreach ($search as $key => $value) {
-        if (is_array($value)) {
-          $search[$key] = array_unique($value);
-        }
-      }
       // Load translations for conditions and set them to the cache
       $loaded = $this->multiple_translation_load($search, $langcode);
       if ($loaded) {
@@ -877,8 +888,8 @@ class i18n_string_textgroup_default {
   /**
    * Get strings from multiple cache.
    * 
-   * @param $context
-   *   String context with language property at the end.
+   * @param $context array
+   *   String context as array with language property at the end.
    * 
    * @return mixed
    *   Array of strings (may be empty) if we've got a cache hit.
@@ -988,8 +999,8 @@ class i18n_string_textgroup_default {
     $alias = $query->leftJoin('i18n_string', 's', 'l.lid = s.lid');
     $query->condition('s.lid', NULL);
     foreach ($query->execute()->fetchAll() as $string) {
-      list($string->type, $string->objectid, $string->property) = explode(':', $string->context);
-      $this->save_string($string);
+      $i18nstring = $this->build_string($string->context, $string->source);
+      $this->save_string($i18nstring);
     }
   }
 
