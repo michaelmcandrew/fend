@@ -178,7 +178,9 @@ h2#site-slogan {
 	margin: 0 auto;
 }
 #leftCol .block h4, 
-#rightCol .block h4 {
+#rightCol .block h4,
+#leftCol .block h2, 
+#rightCol .block h2 {
 	font-size: 1.2em;
 	margin-bottom: 4px;
 }
