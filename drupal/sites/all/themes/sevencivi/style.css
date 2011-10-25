@@ -996,17 +996,14 @@ div.add-or-remove-shortcuts {
 }
 
 /* Custom */
-
 #content {
-	margin-right: 235px;
+	float: left;
 }
 
 #right_sidebar {
-	position: absolute;
-	top: 25px;
-	right: 0;
 	width: 200px;
 	padding: 10px;
+	float: right;
 }
 
 
