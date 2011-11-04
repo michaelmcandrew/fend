@@ -31,6 +31,9 @@ body {
 	font-family: Verdana, Geneva,sans-serif;
 	font-size: 62.5%;
 }
+iframe body {
+	color: #fff;
+}
 #wrapper, 
 #footer { 
 	width: 930px;
@@ -175,7 +178,9 @@ h2#site-slogan {
 	margin: 0 auto;
 }
 #leftCol .block h4, 
-#rightCol .block h4 {
+#rightCol .block h4,
+#leftCol .block h2, 
+#rightCol .block h2 {
 	font-size: 1.2em;
 	margin-bottom: 4px;
 }
@@ -193,6 +198,9 @@ h2#site-slogan {
 #page-title {
 	font-size: 1.6em;
 	font-weight: bold;
+}
+td.title {
+	font-size: 1.2em;
 }
 .title a {
 	color: #333;
@@ -228,11 +236,13 @@ h2#site-slogan {
 
 /*...SEARCH FORM...*/
 #search-block-form input { 
+	width: 123px;
 	height: 20px;
 	border: 1px solid #333;
 	padding: 4px;
 }
 #search-block-form input#edit-submit {
+	width: 50px;
 	height: 27px;
 	padding: 4px;
 }
@@ -250,7 +260,12 @@ td, th {
 th {
 	padding: 6px 8px 6px 2px;
 }
-
+span.submitted {
+	font-size: 0.8em;
+}
+.title span.submitted a {
+	font-size: 1em;
+}
 /*...FORM STYLES...*/
 label {
 	font-weight: normal;
