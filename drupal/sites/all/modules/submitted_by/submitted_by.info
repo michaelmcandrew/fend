@@ -3,9 +3,9 @@ description = Customize the <em>Submitted by username on date</em> text on a per
 dependencies[] = token
 core = 7.x
 
-; Information added by drupal.org packaging script on 2011-10-09
+; Information added by drupal.org packaging script on 2011-11-06
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "submitted_by"
-datestamp = "1318121067"
+datestamp = "1320539424"
 
