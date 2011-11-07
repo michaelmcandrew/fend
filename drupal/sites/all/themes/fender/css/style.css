@@ -107,6 +107,9 @@ h2#site-slogan {
 	float: right;
 	text-align: right;
 }
+#block-system-user-menu li {
+	float: left;
+}
 #block-system-user-menu li a {
 	background-color: #D9E8E3;
 	color: #545454;
