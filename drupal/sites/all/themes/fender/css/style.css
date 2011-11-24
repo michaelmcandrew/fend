@@ -216,12 +216,15 @@ td.title {
 .node-teaser {
 	margin-bottom: 25px;
 }
-.node-teaser ul.inline {
-	margin-top: 10px;
-	display: inline-block !important;
+#content .node-teaser ul.inline {
+	margin: 10px 0;
+	display: block;
 }
 .node-teaser ul.inline li {
 	padding: 0 12px 0 0;
+}
+.post-date {
+	margin-bottom: 6px;
 }
 #node-7 ul, 
 #node-7 ol {
