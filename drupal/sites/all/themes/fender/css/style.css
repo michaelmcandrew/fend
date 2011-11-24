@@ -247,7 +247,8 @@ td.title {
 	border: 1px solid #333;
 	padding: 4px;
 }
-#search-block-form input#edit-submit {
+#search-block-form input#edit-submit,
+#search-block-form input#edit-submit--2 {
 	width: 50px;
 	height: 27px;
 	padding: 4px;
