@@ -307,7 +307,8 @@ class CRM_Core_Payment_BaseProtXResult {
         $contribution->cancel_date = self::$_now;
         $contribution->cancel_reason = CRM_Utils_Array::value( 'reasonCode', $input );
         $contribution->save( );
-
+		
+		$component = 'contribute';
         if ( $membership ) {
             $membership->status_id = 6;
             $membership->save( );
@@ -319,6 +320,7 @@ class CRM_Core_Payment_BaseProtXResult {
         }
         
         if ( $participant ) {
+			$component = 'event';
             $participant->status_id = 4;
             $participant->save( );
         }
@@ -337,7 +339,7 @@ class CRM_Core_Payment_BaseProtXResult {
 		CRM_Core_BAO_PaymentProcessor::retrieve($params, $p_processor);	
 		$redirect_url = $p_processor['url_button'];	
         
-		header("Location:".$redirect_url."?msg=cancelled");
+		header("Location:".$redirect_url."?msg=cancelled&component={$component}");
 		exit;
 		### jyoti 
 
