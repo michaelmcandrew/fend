@@ -107,6 +107,9 @@ h2#site-slogan {
 	float: right;
 	text-align: right;
 }
+#block-system-user-menu li {
+	float: left;
+}
 #block-system-user-menu li a {
 	background-color: #D9E8E3;
 	color: #545454;
@@ -213,12 +216,15 @@ td.title {
 .node-teaser {
 	margin-bottom: 25px;
 }
-.node-teaser ul.inline {
-	margin-top: 10px;
-	display: inline-block !important;
+#content .node-teaser ul.inline {
+	margin: 10px 0;
+	display: block;
 }
 .node-teaser ul.inline li {
 	padding: 0 12px 0 0;
+}
+.post-date {
+	margin-bottom: 6px;
 }
 #node-7 ul, 
 #node-7 ol {
@@ -241,7 +247,8 @@ td.title {
 	border: 1px solid #333;
 	padding: 4px;
 }
-#search-block-form input#edit-submit {
+#search-block-form input#edit-submit,
+#search-block-form input#edit-submit--2 {
 	width: 50px;
 	height: 27px;
 	padding: 4px;

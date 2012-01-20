@@ -137,6 +137,7 @@
 				</h1>
 			<?php endif; ?>
 			<?php if ($tabs): ?><?php print render($tabs); ?><?php endif; ?>
+
 			<?php print render($page['content']); ?>
 		</div>
 	
