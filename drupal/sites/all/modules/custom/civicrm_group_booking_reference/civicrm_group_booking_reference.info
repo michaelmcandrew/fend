@@ -1,0 +1,5 @@
+name = CiviCRM group booking
+description = "Does some convenience stuff to allow you to identify group bookings."
+package = CiviCRM
+core = 7.x
+

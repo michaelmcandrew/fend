@@ -1,0 +1,5 @@
+<?php
+function civicrm_group_booking_reference_civicrm_postProcess( $formName, &$form ){
+	// drupal_set_message('xxx');
+	// drupal_set_message(print_r($form->getVar('_participantIDS')));exit;
+}

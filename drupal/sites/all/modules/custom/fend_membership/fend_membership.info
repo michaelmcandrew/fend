@@ -1,0 +1,5 @@
+name = FEND membership
+description = "Does some convenience stuff for membership renewals."
+package = FEND extras
+core = 7.x
+

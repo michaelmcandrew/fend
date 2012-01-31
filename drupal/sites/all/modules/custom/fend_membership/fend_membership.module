@@ -1,0 +1,75 @@
+<?php
+function fend_membership_block_info() {
+	$blocks['info'] = array(
+		'info' => t('Membership info'),
+	);
+	$blocks['button'] = array(
+		'info' => t('Membership info'),
+	);
+	return $blocks;
+}
+
+function fend_membership_block_view($delta = '') {
+	global $user;
+	if($user->uid){
+		$block['subject'] = 'Current membership info';
+		$block['content'] = fend_membership_current_info();
+		return $block;
+	}
+}
+
+function fend_membership_get(){
+	global $user;
+	if($user->uid){
+		civicrm_initialize();
+		$contact_params = array ('version' =>'3',
+						'uf_id' => $user->uid,
+						'return' => 'contact_id'
+						);
+		$contact_id=civicrm_api("UFMatch", "getvalue", $contact_params);
+				
+		$membership_params = array ('version' =>'3',
+						'contact_id' => $contact_id
+						);
+		$membership_result=civicrm_api("membership", "get", $membership_params);
+		
+		if($membership_result['count']==0){
+			return FALSE;
+		}
+		$membership_values = $membership_result['values'];//get membership with latest end date
+		$membership=current($membership_values);
+		foreach($membership_result['values'] as $membership_compare){
+			$membership_date=new DateTime($membership['end_date']);
+			$membership_compare_date=new DateTime($membership_compare['end_date']);
+			if($membership_compare_date>$membership_date){
+				$membership = $membership_compare;
+			}
+		}
+	}
+	return $membership;
+}
+
+
+function fend_membership_current_info(){
+	$membership=fend_membership_get();
+	if($membership){
+		$end_date = new DateTime($membership['end_date']);
+		require_once 'CRM/Member/PseudoConstant.php';
+		$now = new DateTime();
+		$text[]='</p>';
+		if($end_date<$now){
+			$text[]='Your membership expired on ';
+		}else{
+			$text[]='Your membership expires on ';
+		}
+
+		$text[]='<b>'.$end_date->format('d F Y').'</b>. ';
+		$text[]='Your current membership status is <b>'.CRM_Member_PseudoConstant::membershipStatus($membership['status_id']).'.</b></p>';
+		$text[]='<b>'.l('Click here to renew your membership','civicrm/contribute/transact/?reset=1&id=2').'</b>';
+		return implode($text);
+	} else {
+		$text[]='<p>We have no membership on record for you.</p>';
+		$text[]='<b>'.l('Click here to become a member','civicrm/contribute/transact/?reset=1&id=2').'</b>';
+		return implode($text);
+	}
+}
