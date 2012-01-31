@@ -1,0 +1,41 @@
+<?php
+
+function fend_event_civicrm_buildForm( $formName, &$form ){
+
+	if($formName=='CRM_Event_Form_Registration_Register'){
+		$form->addElement('text', 'bookingAgentFirstName', 'First Name', array('value'=>$result->first_name), true);
+		$form->addRule('bookingAgentFirstName', 'First name is required', 'required');
+		$form->addElement('text', 'bookingAgentLastName', 'Last Name', array('value'=>$result->middle_name), TRUE);
+		$form->addRule('bookingAgentLastName', 'Last name is required', 'required');
+		$form->addElement('text','bookingAgentEmail', 'Email', array('value'=>$result->email), CRM_Core_DAO::getAttribute('CRM_Core_DAO_Email', 'email'), TRUE);
+		$form->addRule( 'bookingAgentEmail', 'Email required.', 'required' );
+		$form->addRule( 'bookingAgentEmail', 'Email is not valid.', 'email' );
+		$form->addElement('text', 'bookingAgentPhone', 'Phone', array('value'=>$result->last_name), TRUE);
+		$form->addRule('bookingAgentPhone', 'Phone is required', 'required');
+	}
+
+	$fields=array('bookingAgentFirstName', 'bookingAgentLastName', 'bookingAgentEmail', 'bookingAgentPhone');
+	if($formName=='CRM_Event_Form_Registration_Register' OR $formName=='CRM_Event_Form_Registration_AdditionalParticipant' OR $formName=='CRM_Event_Form_Registration_Confirm'){
+		foreach($fields as $field){
+			if($form->_params[0][$field]){
+				$form->assign($field, $form->_params[0][$field]);
+			}
+		}
+	}
+}
+
+function fend_event_civicrm_postProcess( $formName, &$form ){
+	if($formName=='CRM_Event_Form_Registration_Register' OR $formName=='CRM_Event_Form_Registration_AdditionalParticipant' OR $formName=='CRM_Event_Form_Registration_Confirm'){
+		$participant_ids=$form->getVar('_participantIDS');
+		if(count($participant_ids)>1){
+			$booking_reference=each($participant_ids);
+			foreach($participant_ids as $participant_id){
+				$query='INSERT INTO civicrm_value_group_21 SET group_registration_90 = %1, entity_id= %2 ON DUPLICATE KEY UPDATE group_registration_90 = %1';
+				$params[1]=array($booking_reference['value'], 'Integer');
+				$params[2]=array($participant_id, 'Integer');
+				print_r($params);
+				CRM_Core_DAO::executeQuery($query, $params);
+			}
+		}
+	}
+}
