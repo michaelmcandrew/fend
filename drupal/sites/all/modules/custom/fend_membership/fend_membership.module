@@ -9,7 +9,7 @@ function fend_membership_block_info() {
 function fend_membership_block_view($delta = '') {
 	global $user;
 	if($user->uid){
-		$block['subject'] = 'Current membership info';
+		$block['subject'] = 'Membership info';
 		$block['content'] = fend_membership_current_info();
 		return $block;
 	}
