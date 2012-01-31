@@ -3,9 +3,6 @@ function fend_membership_block_info() {
 	$blocks['info'] = array(
 		'info' => t('Membership info'),
 	);
-	$blocks['button'] = array(
-		'info' => t('Membership info'),
-	);
 	return $blocks;
 }
 
