@@ -1,44 +1,13 @@
 <?php
 
-/*
- +--------------------------------------------------------------------+
- | CiviCRM version 2.2                                                |
- +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2009                                |
- +--------------------------------------------------------------------+
- | This file is a part of CiviCRM.                                    |
- |                                                                    |
- | CiviCRM is free software; you can copy, modify, and distribute it  |
- | under the terms of the GNU Affero General Public License           |
- | Version 3, 19 November 2007.                                       |
- |                                                                    |
- | CiviCRM is distributed in the hope that it will be useful, but     |
- | WITHOUT ANY WARRANTY; without even the implied warranty of         |
- | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               |
- | See the GNU Affero General Public License for more details.        |
- |                                                                    |
- | You should have received a copy of the GNU Affero General Public   |
- | License along with this program; if not, contact CiviCRM LLC       |
- | at info[AT]civicrm[DOT]org. If you have questions about the        |
- | GNU Affero General Public License or the licensing of CiviCRM,     |
- | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
- +--------------------------------------------------------------------+
-*/
+class CRM_Core_Payment_BaseSagePayServerNotify {
 
-/**
- *
- * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2009
- * $Id$
- *
- */
-
-class CRM_Core_Payment_BaseProtXResult {
-
-    static $_now = null;
-
-    function __construct( ) {
-        self::$_now = date( 'YmdHis' );
+    static $_now     = null;
+	static $qfkey;
+	protected $component;
+	
+	function __construct() {
+        self::$_now = date('YmdHis');
     }
 
     function validateData( &$input, &$ids, &$objects, $required = true ) {
@@ -55,7 +24,7 @@ class CRM_Core_Payment_BaseProtXResult {
 
         // make sure contribution exists and is valid
         require_once 'CRM/Contribute/DAO/Contribution.php';
-        $contribution =& new CRM_Contribute_DAO_Contribution( );
+        $contribution =& new CRM_Contribute_DAO_Contribution();
         $contribution->id = $ids['contribution'];
         if ( ! $contribution->find( true ) ) {
             CRM_Core_Error::debug_log_message( "Could not find contribution record: $contributionID" );
@@ -66,7 +35,7 @@ class CRM_Core_Payment_BaseProtXResult {
 
         $objects['contact']          =& $contact;
         $objects['contribution']     =& $contribution;
-        if ( ! $this->loadObjects( $input, $ids, $objects, $required ) ) {
+        if (!$this->loadObjects($input, $ids, $objects, $required)) {
             return false;
         }
 
@@ -231,8 +200,11 @@ class CRM_Core_Payment_BaseProtXResult {
 
         return true;
     }
-
+	
+	// Response: REJECTED / ERROR / NOTAUTHED ...
+	
     function failed( &$objects, &$transaction ) {
+		
         $contribution =& $objects['contribution'];
         $membership   =& $objects['membership']  ;
         $participant  =& $objects['participant'] ;
@@ -255,50 +227,42 @@ class CRM_Core_Payment_BaseProtXResult {
             $participant->save( );
         }
             
-        $transaction->commit( );
-        CRM_Core_Error::debug_log_message( "Setting contribution status to failed" );
-        
+        $transaction->commit();
+        CRM_Core_Error::debug_log_message("Setting contribution status to failed");
 		
-		### jyoti 
-		//echo "Success: Setting contribution status to failed<p>";
-
-		// getting calcel url
-		require_once("CRM/Core/BAO/PaymentProcessor.php");
-			
-		$params = array( 'payment_processor_type' => 'PROTX' ) ;
-		CRM_Core_BAO_PaymentProcessor::retrieve($params, $p_processor);	
-		$redirect_url = $p_processor['url_button'];	
-        
-		header("Location:".$redirect_url."?msg=failed");
-		exit;
-		### jyoti 
+		// Send response back to SagePay ...
+		
+		$url       = ($this->component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
+        $cancel    = ($this->component == 'event') ? '_qf_Register_display'   : '_qf_Main_display';
+		$cancelURL = CRM_Utils_System::url($url, "$cancel=1&cancel=1&qfKey=" . SAGEPAY_QFKEY, true, null, false);
+		$eoln      = chr(13) . chr(10);
+		
+		echo "Status=OK" . $eoln;
+		echo "RedirectURL=$cancelURL" . $eoln;
 
         return true;
     }
-
+	
+	// Currently unused ...
     function pending( &$objects, &$transaction ) {
-        $transaction->commit( );
-        CRM_Core_Error::debug_log_message( "returning since contribution status is pending" );
-        
-		### jyoti 
-
-		//echo "Success: Returning since contribution status is pending<p>";
 		
-		// getting calcel url
-		require_once("CRM/Core/BAO/PaymentProcessor.php");
-			
-		$params = array( 'payment_processor_type' => 'PROTX' ) ;
-		CRM_Core_BAO_PaymentProcessor::retrieve($params, $p_processor);	
-		$redirect_url = $p_processor['url_button'];	
+        $transaction->commit();
         
-		header("Location:".$redirect_url."?msg=pending");
-		exit;
-		### jyoti 
+		$url       = ($this->component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
+        $returnURL = CRM_Utils_System::url( $url,
+                                            "_qf_ThankYou_display=1&qfKey=" . SAGEPAY_QFKEY,
+                                            true, null, false);
+		
+		$eoln = chr(13) . chr(10);
+		echo "Status=OK" . $eoln;
+		echo "RedirectURL=$redirect_url?msg=pending" . $eoln;
 
         return true;
     }
-
+	
+	// Payment cancelled by user at SagePay stage ...
     function cancelled( &$objects, &$transaction ) {
+		
         $contribution =& $objects['contribution'];
         $membership   =& $objects['membership']  ;
         $participant  =& $objects['participant'] ;
@@ -306,10 +270,10 @@ class CRM_Core_Payment_BaseProtXResult {
         $contribution->contribution_status_id = 3;
         $contribution->cancel_date = self::$_now;
         $contribution->cancel_reason = CRM_Utils_Array::value( 'reasonCode', $input );
-        $contribution->save( );
-		
-		$module = 'contribute';
+        $contribution->save();
+
         if ( $membership ) {
+			
             $membership->status_id = 6;
             $membership->save( );
             
@@ -320,7 +284,6 @@ class CRM_Core_Payment_BaseProtXResult {
         }
         
         if ( $participant ) {
-			$module = 'event';
             $participant->status_id = 4;
             $participant->save( );
         }
@@ -328,51 +291,38 @@ class CRM_Core_Payment_BaseProtXResult {
         $transaction->commit( );
         CRM_Core_Error::debug_log_message( "Setting contribution status to cancelled" );
         
-		### jyoti 
-
-		//echo "Success: Setting contribution status to cancelled<p>";
-			
-		// getting calcel url
-		require_once("CRM/Core/BAO/PaymentProcessor.php");
-			
-		$params = array( 'payment_processor_type' => 'PROTX' ) ;
-		CRM_Core_BAO_PaymentProcessor::retrieve($params, $p_processor);	
-		$redirect_url = $p_processor['url_button'];	
-        
-		header("Location:".$redirect_url."?msg=cancelled&module={$module}");
-		exit;
-		### jyoti 
-
+		$url       = ($this->component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
+        $cancel    = ($this->component == 'event') ? '_qf_Register_display'   : '_qf_Main_display';
+		$cancelURL = CRM_Utils_System::url($url, "$cancel=1&cancel=1&qfKey=" . SAGEPAY_QFKEY, true, null, false);
+		$eoln      = chr(13) . chr(10);
+		
+		echo "Status=OK" . $eoln;
+		echo "RedirectURL=$cancelURL" . $eoln;
+	
 		return true;
     }
-
+	
+	// If SagePay replied with an unsupported authcode ...
     function unhandled( &$objects, &$transaction ) {
-        $transaction->rollback( );
-        // we dont handle this as yet
+        
+		$transaction->rollback();
         CRM_Core_Error::debug_log_message( "returning since contribution status: $status is not handled" );
         
-		### jyoti 
-
-		//echo "Failure: contribution status $status is not handled<p>";
-		
-		// getting unhandled url
-		require_once("CRM/Core/BAO/PaymentProcessor.php");
-			
-		$params = array( 'payment_processor_type' => 'PROTX' ) ;
-		CRM_Core_BAO_PaymentProcessor::retrieve($params, $p_processor);	
-		$redirect_url = $p_processor['url_button'];	
+		$url       = ($this->component == 'event') ? 'civicrm/event/register' : 'civicrm/contribute/transact';
+        $cancel    = ($this->component == 'event') ? '_qf_Register_display'   : '_qf_Main_display';
+		$cancelURL = CRM_Utils_System::url($url, "$cancel=1&cancel=1&qfKey=" . SAGEPAY_QFKEY, true, null, false);			
         
-		header("Location:".$redirect_url."?msg=unhandled");
-		exit;
-		### jyoti 
+		$eoln = chr(13) . chr(10);
+		echo "Status=INVALID" . $eoln;
+		echo "StatusDetail=Unsupported authcode" . $eoln;
+		echo "RedirectURL=$cancelURL" . $eoln;
 
         return false;
     }
-
+	
+	// Payment authorized, security check OK ...
     function completeTransaction( &$input, &$ids, &$objects, &$transaction, $recur = false ) {
-        //echo "<pre>"; print_r($input); print_r($ids); print_r($objects); print_r($transaction); echo "</pre>"; exit;
-		
-		$contribution =& $objects['contribution'];
+        $contribution =& $objects['contribution'];
         $membership   =& $objects['membership']  ;
         $participant  =& $objects['participant'] ;
         $event        =& $objects['event']       ;
@@ -401,9 +351,7 @@ class CRM_Core_Payment_BaseProtXResult {
                      * when Contribution mode is notify and membership is for renewal ) 
                      */
                     CRM_Member_BAO_Membership::fixMembershipStatusBeforeRenew( $currentMembership, $changeToday = null  );
-                    
                     $dates = CRM_Member_BAO_MembershipType::getRenewalDatesForMembershipType( $membership->id , $changeToday = null );
-                    
                     $dates['join_date'] =  CRM_Utils_Date::customFormat($currentMembership['join_date'], $format );
                     
                 } else {
@@ -445,7 +393,9 @@ class CRM_Core_Payment_BaseProtXResult {
                 CRM_Member_BAO_Membership::updateRelatedMemberships( $membership->id, $formatedParams );
             }
         } else {
-            // event
+			
+            // If event ...
+			
             $eventParams     = array( 'id' => $objects['event']->id );
             $values['event'] = array( );
 
@@ -481,8 +431,9 @@ class CRM_Core_Payment_BaseProtXResult {
             }
 
             $participant->status_id = 1;
-            $participant->save( );
-        }
+            $participant->save();
+        
+		}
         if ( $input['net_amount'] == 0 && $input['fee_amount'] != 0 ) {
             $input['net_amount'] = $input['amount'] - $input['fee_amount'];
         }
@@ -502,15 +453,14 @@ class CRM_Core_Payment_BaseProtXResult {
         }
         
         $contribution->save( );
-
+		
         // next create the transaction record
         if ( isset( $objects['paymentProcessor'] ) ) {
             $paymentProcessor = $objects['paymentProcessor']['payment_processor_type'];
         } else {
             $paymentProcessor = '';
         }
-		####################
-        /*if ( $contribution->trxn_id ) {
+        if ( $contribution->trxn_id ) {
             
             $trxnParams = array(
                                 'contribution_id'   => $contribution->id,
@@ -524,11 +474,22 @@ class CRM_Core_Payment_BaseProtXResult {
                                 'trxn_id'           => $contribution->trxn_id,
                                 'trxn_result_code'  => $input['TxAuthNo'],
                                 );
-            
-            require_once 'CRM/Contribute/BAO/FinancialTrxn.php';
-            $trxn =& CRM_Contribute_BAO_FinancialTrxn::create( $trxnParams );
-        }*/
-		############################
+			
+			if (file_exists('../CRM/Contribute/BAO/FinancialTrxn.php')) {
+				// < v3.2
+				require_once 'CRM/Contribute/BAO/FinancialTrxn.php';
+				$trxn = &CRM_Contribute_BAO_FinancialTrxn::create($trxnParams);
+				
+			} elseif (file_exists('../CRM/Core/BAO/FinancialTrxn.php')) {
+				// > v3.2
+				require_once 'CRM/Core/BAO/FinancialTrxn.php';
+				$trxn = &CRM_Core_BAO_FinancialTrxn::create($trxnParams);
+				
+			} else {
+				die('Unable to locate CiviCRM FinancialTrxn class.');	
+			}
+        
+		}
         
         //update corresponding pledge payment record
         require_once 'CRM/Core/DAO.php';
@@ -554,38 +515,23 @@ class CRM_Core_Payment_BaseProtXResult {
             CRM_Activity_BAO_Activity::addActivity( $participant );
         }
 
-        CRM_Core_Error::debug_log_message( "Contribution record updated successfully" );
-        $transaction->commit( );
+        CRM_Core_Error::debug_log_message("Contribution record updated successfully");
+        $transaction->commit();
+			
+        self::sendMail($input, $ids, $objects, $values, $recur, false);
 
-        self::sendMail( $input, $ids, $objects, $values, $recur, false );
-
-        CRM_Core_Error::debug_log_message( "Success: Database updated and mail sent" );
+        CRM_Core_Error::debug_log_message("Success: Database updated and mail sent");
         
-        // Setup return to be sent out to the screen so that Sage Page can complete its transaction
-        // Now show the relevant output to the screen so that Sage Pay knows where to be redirected to
-        $url    = ( $input['component'] == 'event' ) ? 'civicrm/event/register' : 'civicrm/contribute/transact';
-        $qfKey = $_GET['qfKey'];
+        // Produce the relevant output so SagePay knows where to redirect the user
+        $url    = ($input['component'] == 'event' ) ? 'civicrm/event/register' : 'civicrm/contribute/transact';
         $returnURL = CRM_Utils_System::url( $url,
-                                            "_qf_ThankYou_display=1&qfKey=$qfKey",
-                                            true, null, false );
+                                            "_qf_ThankYou_display=1&qfKey=" . SAGEPAY_QFKEY,
+                                            true, null, false);
 
-        
-		### jyoti 
-
-		//ob_flush();
         $eoln = chr(13) . chr(10);
-		
-		// by jyoti: 26may10
-		/*echo "Status=OK" . $eoln;
-		echo "StatusDetail=" . $eoln;*/
-		//echo "RedirectURL=" . $returnURL . $eoln;
-		//echo "RedirectURL=http://secure.millertech.co.uk:8087/". $eoln; 
-		//CRM_Utils_System::redirect( $eoln );	
-		
-//echo $returnURL; exit;		
-		header("Location:".$returnURL . $eoln);		
-		exit;
-		### jyoti 
+		echo "Status=OK" . $eoln;
+		echo "RedirectURL=" . $returnURL . $eoln;
+		 
 
     }
     
@@ -768,9 +714,9 @@ class CRM_Core_Payment_BaseProtXResult {
             $additionalIDs = CRM_Event_BAO_Event::buildCustomProfile( $participant->id, null, $ids['contact'], $isTest, true );
             unset( $additionalIDs[$participant->id] ); 
             //send receipt to additional participant if exists
-            if ( count($additionalIDs) ) {
-                $template->assign( 'isPrimary', 0 ); 
-                $template->assign( 'customProfile', null );
+            if (count($additionalIDs)) {
+                $template->assign('isPrimary', 0); 
+                $template->assign('customProfile', null);
                 //set additionalParticipant true
                 $values['params']['additionalParticipant'] = true;
                 foreach ( $additionalIDs as $pId => $cId ) {
@@ -846,6 +792,7 @@ class CRM_Core_Payment_BaseProtXResult {
             $isTest = false;
             if ( $contribution->is_test ) {
                 $isTest = true;
+
             }
             // CRM_Core_Error::debug('val',$values);
 
@@ -853,7 +800,6 @@ class CRM_Core_Payment_BaseProtXResult {
         }
     }
 
+};
 
-}
-
-
+?>
