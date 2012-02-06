@@ -1,21 +1,61 @@
 <?php
 
 function fend_event_civicrm_buildForm( $formName, &$form ){
+	global $user;
+	
+	//you can switch between booking agent and non booking agent versions of the form by clicking on a link on the first screen.  when you do this, we assign a form variable to keep track of this
+	if(isset($GLOBALS['_GET']['agent'])){
+		$form->set('agent', $GLOBALS['_GET']['agent']);
+	}
+	//if this is a booking agent version of the form...
+	if($form->get('agent')){
+		
+		//tell the the template that this is a booking agent form
+		$form->assign('agent', $form->get('agent'));		
 
-	if($formName=='CRM_Event_Form_Registration_Register'){
-		$form->addElement('text', 'bookingAgentFirstName', 'First Name', array('value'=>$result->first_name), true);
-		$form->addRule('bookingAgentFirstName', 'First name is required', 'required');
-		$form->addElement('text', 'bookingAgentLastName', 'Last Name', array('value'=>$result->middle_name), TRUE);
-		$form->addRule('bookingAgentLastName', 'Last name is required', 'required');
-		$form->addElement('text','bookingAgentEmail', 'Email', array('value'=>$result->email), CRM_Core_DAO::getAttribute('CRM_Core_DAO_Email', 'email'), TRUE);
-		$form->addRule( 'bookingAgentEmail', 'Email required.', 'required' );
-		$form->addRule( 'bookingAgentEmail', 'Email is not valid.', 'email' );
-		$form->addElement('text', 'bookingAgentPhone', 'Phone', array('value'=>$result->last_name), TRUE);
-		$form->addRule('bookingAgentPhone', 'Phone is required', 'required');
+		//If this is the registration form...
+		if($formName=='CRM_Event_Form_Registration_Register' ){
+
+			//if the user is logged in, fetch the booking agent contact info.
+			if($user->uid){
+				
+				civicrm_initialize();
+				$params = array ('version' =>'3',
+								'uf_id' => $user->uid,
+								'return' => 'contact_id' );
+				$contact_id=civicrm_api("UFMatch","getvalue",$params );
+				$params[1] = array( $contact_id, 'Integer');
+				$query="SELECT
+					cc.id,
+					cc.first_name,
+					cc.last_name,
+					ce.email,
+					ce.id AS email_id,
+					cp.phone,
+					cp.id AS phone_id
+				FROM civicrm_contact AS cc
+				LEFT JOIN civicrm_email AS ce ON cc.id=ce.contact_id AND ce.is_primary
+				LEFT JOIN civicrm_phone AS cp ON cc.id=cp.contact_id AND cp.is_primary
+				WHERE
+					cc.id = %1";
+
+				$result = CRM_Core_DAO::executeQuery( $query, $params );	
+				$result->fetch();
+			}
+
+			//add booking agent fields
+			$form->addElement('text', 'bookingAgentFirstName', 'First Name', array('value'=>$result->first_name), true);
+			$form->addElement('text', 'bookingAgentLastName', 'Last Name', array('value'=>$result->last_name), TRUE);
+			$form->addElement('text','bookingAgentEmail', 'Email', array('value'=>$result->email), CRM_Core_DAO::getAttribute('CRM_Core_DAO_Email', 'email'), TRUE);
+			$form->addElement('text', 'bookingAgentPhone', 'Phone', array('value'=>$result->phone), TRUE);
+			$form->addElement('hidden', 'bookingAgentContactID', $result->id);
+			$form->addElement('hidden', 'groupBooking', TRUE);
+		}
 	}
 
-	$fields=array('bookingAgentFirstName', 'bookingAgentLastName', 'bookingAgentEmail', 'bookingAgentPhone');
-	if($formName=='CRM_Event_Form_Registration_Register' OR $formName=='CRM_Event_Form_Registration_AdditionalParticipant' OR $formName=='CRM_Event_Form_Registration_Confirm'){
+	//ensure booking agent fields get transferred along the form
+	$fields=array('bookingAgentFirstName', 'bookingAgentLastName', 'bookingAgentEmail', 'bookingAgentPhone', 'bookingAgentContactID');
+	if(in_array($formName, array('CRM_Event_Form_Registration_Register', 'CRM_Event_Form_Registration_AdditionalParticipant', 'CRM_Event_Form_Registration_Confirm', 'CRM_Event_Form_Registration_ThankYou'))){
 		foreach($fields as $field){
 			if($form->_params[0][$field]){
 				$form->assign($field, $form->_params[0][$field]);
@@ -24,18 +64,113 @@ function fend_event_civicrm_buildForm( $formName, &$form ){
 	}
 }
 
+function fend_event_civicrm_validate( $formName, &$fields, &$files, &$form ) {
+    //if this form has booking agent details, then validate them...
+	if($formName == 'CRM_Event_Form_Registration_Register' AND $form->get('agent')){
+		$fieldlist=array('bookingAgentFirstName', 'bookingAgentLastName', 'bookingAgentEmail', 'bookingAgentPhone');
+		foreach($fieldlist as $field){
+	       if ( ! trim(CRM_Utils_Array::value( $field, $fields )) ) {
+	          $errors[$field] = ts( 'This is a required field' );
+	       }
+		}
+		require_once "CRM/Utils/Rule.php";
+	 	if ( ! CRM_Utils_Rule::email( CRM_Utils_Array::value( 'bookingAgentEmail', $fields ) ) ) {
+	   		$errors['bookingAgentEmail'] = ts( 'Not a valid email' );
+		}
+	}
+    return empty( $errors ) ? true : $errors;
+}
+
+
+
 function fend_event_civicrm_postProcess( $formName, &$form ){
-	if($formName=='CRM_Event_Form_Registration_Register' OR $formName=='CRM_Event_Form_Registration_AdditionalParticipant' OR $formName=='CRM_Event_Form_Registration_Confirm'){
+	//if this is a booking agent form, then we need to save the reference and the booking agent info (the reason we have a few different form names here is because if this isn't a paid event and/or only one person is registering, we might use one of the first two)
+	if($form->get('agent') AND ($formName=='CRM_Event_Form_Registration_Confirm')){
+
 		$participant_ids=$form->getVar('_participantIDS');
-		if(count($participant_ids)>1){
-			$booking_reference=each($participant_ids);
-			foreach($participant_ids as $participant_id){
-				$query='INSERT INTO civicrm_value_group_21 SET group_registration_90 = %1, entity_id= %2 ON DUPLICATE KEY UPDATE group_registration_90 = %1';
-				$params[1]=array($booking_reference['value'], 'Integer');
-				$params[2]=array($participant_id, 'Integer');
-				print_r($params);
-				CRM_Core_DAO::executeQuery($query, $params);
+		
+		//first, if there is no bookingAgentId, then add a booking agent to the DB
+		if(!$form->_params['bookingAgentContactID']){
+			
+			$contact_params=array(
+				'first_name'=>$form->_params['bookingAgentFirstName'],
+				'last_name'=>$form->_params['bookingAgentLastName'],
+				'contact_type'=>'Individual',
+				'version'=>3,
+				);
+			$contact_result=civicrm_api("Contact","create", $contact_params);
+			if($form->_params['bookingAgentEmail']){
+				$email_params=array(
+					'contact_id'=>$contact_result['id'],
+					'email'=>$form->_params['bookingAgentEmail'],
+					'version'=>3,
+					);
+				$email_result=civicrm_api("Email","create", $email_params);
 			}
+			if($form->_params['bookingAgentPhone']){
+				$phone_params=array(
+					'contact_id'=>$contact_result['id'],
+					'phone'=>$form->_params['bookingAgentPhone'],
+					'is_primary'=>1,
+					'version'=>3,
+					);
+				$phone_result=civicrm_api("Phone","create", $phone_params);
+			}
+			
+			$form->_params['bookingAgentContactID']=$contact_result['id'];
+		}
+		//uncomment if you want to create a booking agent role
+
+		// $participant_params=array(
+		// 	'contact_id'=>$contact_result['id'],
+		// 	'event_id'=>$form->_values['event']['id'],
+		// 	'status_id'=>'1',
+		// 	'role_id'=>'6',
+		// 	'version'=>3,
+		// 	);
+		// $participant_result=civicrm_api("Participant","create", $participant_params);
+		// $participant_ids[]=$participant_result['id'];
+
+		$booking_reference=each($participant_ids);
+		foreach($participant_ids as $participant_id){
+			$query='INSERT INTO civicrm_value_group_21 SET group_registration_90 = %1, entity_id= %2, booking_agent_132 = %3 ON DUPLICATE KEY UPDATE group_registration_90 = %1, booking_agent_132 = %3';
+			$params[1]=array($booking_reference['value'], 'Integer');
+			$params[2]=array($participant_id, 'Integer');
+			$params[3]=array($form->_params['bookingAgentContactID'], 'Integer');			
+			CRM_Core_DAO::executeQuery($query, $params);
 		}
 	}
 }
+
+function fend_event_civicrm_buildAmount( $pageType, &$form, &$amount ){
+	if($pageType!='event'){
+		return;
+	}
+	if($GLOBALS['_GET']['agent'] OR $form->get('agent')){
+		$group_booking=TRUE;
+	}
+	
+	$current_member=FALSE;
+	$membership=fend_membership_get();
+	if($membership){
+		$end_date = new DateTime($membership['end_date']);
+		$now = new DateTime();
+		if($end_date>$now){
+			$current_member=TRUE;
+		}
+	}
+	foreach($amount as $key => $option){
+		if($option['weight']==1){
+			$member_key=$key;
+		}
+		if($option['weight']==2){
+			$non_member_key=$key;
+		}
+	}
+	if(!$current_member OR $group_booking){
+		$amount[$member_key]['value']=$amount[$non_member_key]['value'];
+		$amount[$member_key]['label']=$amount[$non_member_key]['label'];
+		unset($amount[$non_member_key]);
+	}
+}
+
