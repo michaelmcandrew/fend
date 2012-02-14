@@ -33,10 +33,10 @@
 <div class="crm-block crm-event-register-form-block">
 
 {if $agent}
-<div class="status">
-<strong>Making an individual booking?</strong><br>For individual bookings, please use our <a href="{crmURL p='civicrm/event/register' q="&reset=1agent=0&id=`$event.id`"}" title="{ts}standard registration form{/ts}">{ts 1=$display_name}standard registration form{/ts}</a>.
-</div>
-{include file="CRM/Event/Form/Registration/GroupBooking.tpl"}
+<p><i>For <b>individual bookings</b>, click below to use our</i> individual booking form.</p>
+<a class="button" href="{crmURL p='civicrm/event/register' q="&reset=1agent=0&id=`$event.id`"}" title="{ts}Individual booking form{/ts}">{ts 1=$display_name}Individual booking form{/ts}</a>.
+<div class="clear"></div>
+<fieldset><legend>Group booking form</legend></fieldset>
 {if $form.additional_participants.html}
     <div class="crm-section additional_participants-section" id="noOfparticipants">
         <div class="label">{$form.additional_participants.label}</div>
@@ -47,11 +47,13 @@
         <div class="clear"></div>
     </div>
 {/if}
-<fieldset><legend>Delegate details</legend></fieldset>
+{include file="CRM/Event/Form/Registration/GroupBooking.tpl"}
+<fieldset><legend>Participant details</legend></fieldset>
 {else}
-<div class="status">
-<strong>Are you a booking agent?</strong><br>Please use our <a href="{crmURL p='civicrm/event/register' q="cid=0&agent=1&reset=1&id=`$event.id`"}" title="{ts}booking agent registration form{/ts}">{ts 1=$display_name}booking agent registration form{/ts}</a>. This also allows registration of multiple participant on this event.
-</div>
+<p><i>For <b>group bookings</b>, click below to use our</i> Group booking form. <i>This also allows registration of multiple participants.</i></p> 
+<a class="button" href="{crmURL p='civicrm/event/register' q="cid=0&agent=1&reset=1&id=`$event.id`"}" title="{ts}Group booking form{/ts}">{ts 1=$display_name}Group booking form{/ts}</a>
+<div class="clear"></div>
+<fieldset><legend>Individual booking form</legend></fieldset>
 {/if}
 
 
@@ -83,7 +85,7 @@
         {include file="CRM/Price/Form/PriceSet.tpl" extends="Event"}
 	{include file="CRM/Price/Form/ParticipantCount.tpl"}
     </fieldset>
-    {if $form.is_pay_later}
+    {if $form.is_pay_later AND $agent}
         <div class="crm-section pay_later-section">
 	        <div class="label">&nbsp;</div>
             <div class="content">{$form.is_pay_later.html}&nbsp;{$form.is_pay_later.label}</div>
@@ -98,7 +100,7 @@
     		<div class="content">{$form.amount.html}</div>
             <div class="clear"></div>
      	</div>
-        {if $form.is_pay_later}
+        {if $form.is_pay_later AND $agent}
             <div class="crm-section pay_later-section">
     	        <div class="label">&nbsp;</div>
                 <div class="content">{$form.is_pay_later.html}&nbsp;{$form.is_pay_later.label}</div>

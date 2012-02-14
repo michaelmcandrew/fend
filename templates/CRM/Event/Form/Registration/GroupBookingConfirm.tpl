@@ -28,4 +28,4 @@
 
 </fieldset>
     
-<div class="crm-group"><div class="header-dark">{ts}Delegate details{/ts}</div></div>
+<div class="crm-group"><div class="header-dark">{ts}Participant details{/ts}</div></div>

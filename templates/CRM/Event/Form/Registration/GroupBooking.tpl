@@ -1,4 +1,4 @@
-<fieldset><legend>Booking agent details</legend>
+<fieldset><legend>Agent details</legend>
 
 <div class="crm-section {$form.bookingAgentFirstName.name}-section">	
 	<div class="label">{$form.bookingAgentFirstName.label}</div>
