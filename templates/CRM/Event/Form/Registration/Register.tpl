@@ -33,8 +33,8 @@
 <div class="crm-block crm-event-register-form-block">
 
 {if $agent}
-<p><i>For <b>individual bookings</b>, click below to use our</i> individual booking form.</p>
-<a class="button" href="{crmURL p='civicrm/event/register' q="&reset=1agent=0&id=`$event.id`"}" title="{ts}Individual booking form{/ts}">{ts 1=$display_name}Individual booking form{/ts}</a>.
+<p><i>This page is for group registration. Click below for <b>individual</b> booking.</i></p> 
+<a class="button" href="{crmURL p='civicrm/event/register' q="&reset=1agent=0&id=`$event.id`"}" title="{ts}Go to individual booking form{/ts}">{ts 1=$display_name}Go to individual booking form{/ts}</a>.
 <div class="clear"></div>
 <fieldset><legend>Group booking form</legend></fieldset>
 {if $form.additional_participants.html}
@@ -48,10 +48,31 @@
     </div>
 {/if}
 {include file="CRM/Event/Form/Registration/GroupBooking.tpl"}
+
+{if $priceSet}
+    {if $form.is_pay_later AND $agent}
+        <div class="crm-section pay_later-section">
+	        <div class="label">&nbsp;</div>
+            <div class="content">{$form.is_pay_later.html}&nbsp;{$form.is_pay_later.label}</div>
+            <div class="clear"></div>
+        </div>
+    {/if}
+{else}
+    {if $paidEvent}
+        {if $form.is_pay_later AND $agent}
+            <div class="crm-section pay_later-section">
+    	        <div class="label">&nbsp;</div>
+                <div class="content">{$form.is_pay_later.html}&nbsp;{$form.is_pay_later.label}</div>
+                <div class="clear"></div>
+            </div>
+        {/if}
+    {/if}
+{/if}
+
 <fieldset><legend>Participant details</legend></fieldset>
 {else}
-<p><i>For <b>group bookings</b>, click below to use our</i> Group booking form. <i>This also allows registration of multiple participants.</i></p> 
-<a class="button" href="{crmURL p='civicrm/event/register' q="cid=0&agent=1&reset=1&id=`$event.id`"}" title="{ts}Group booking form{/ts}">{ts 1=$display_name}Group booking form{/ts}</a>
+<p><i>This page is for individual registration. If you wish to register a <b>group</b> please use the Group booking form.</i></p> 
+<a class="button" href="{crmURL p='civicrm/event/register' q="cid=0&agent=1&reset=1&id=`$event.id`"}" title="{ts}Go to group booking form{/ts}">{ts 1=$display_name}Go to group booking form{/ts}</a>
 <div class="clear"></div>
 <fieldset><legend>Individual booking form</legend></fieldset>
 {/if}
@@ -85,13 +106,6 @@
         {include file="CRM/Price/Form/PriceSet.tpl" extends="Event"}
 	{include file="CRM/Price/Form/ParticipantCount.tpl"}
     </fieldset>
-    {if $form.is_pay_later AND $agent}
-        <div class="crm-section pay_later-section">
-	        <div class="label">&nbsp;</div>
-            <div class="content">{$form.is_pay_later.html}&nbsp;{$form.is_pay_later.label}</div>
-            <div class="clear"></div>
-        </div>
-    {/if}
 
 {else}
     {if $paidEvent}
@@ -100,13 +114,6 @@
     		<div class="content">{$form.amount.html}</div>
             <div class="clear"></div>
      	</div>
-        {if $form.is_pay_later AND $agent}
-            <div class="crm-section pay_later-section">
-    	        <div class="label">&nbsp;</div>
-                <div class="content">{$form.is_pay_later.html}&nbsp;{$form.is_pay_later.label}</div>
-                <div class="clear"></div>
-            </div>
-        {/if}
     {/if}
 {/if}
 
