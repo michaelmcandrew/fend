@@ -33,7 +33,7 @@
 <div class="crm-block crm-event-register-form-block">
 
 {if $agent}
-<p><i>This page is for group registration. Click below for <b>individual</b> booking.</i></p> 
+<p><i>This page is for GROUP registration.</i></p> 
 <a class="button" href="{crmURL p='civicrm/event/register' q="&reset=1agent=0&id=`$event.id`"}" title="{ts}Go to individual booking form{/ts}">{ts 1=$display_name}Go to individual booking form{/ts}</a>.
 <div class="clear"></div>
 <fieldset><legend>Group booking form</legend></fieldset>
