@@ -2,6 +2,8 @@
 
 function fend_event_civicrm_buildForm( $formName, &$form ){
 	global $user;
+    // CRM_Core_Error::debug( '$form', $form );
+    //exit;
 	$fields=array('bookingAgentFirstName', 'bookingAgentLastName', 'bookingAgentEmail', 'bookingAgentPhone', 'bookingAgentContactID');
 	foreach($fields as $field){
 		$form->assign($field, $form->get($field));
@@ -62,8 +64,11 @@ function fend_event_civicrm_buildForm( $formName, &$form ){
 
 function fend_event_civicrm_validate( $formName, &$fields, &$files, &$form ) {
     //if this form has booking agent details, then validate them...
+
 	if($formName == 'CRM_Event_Form_Registration_Register' AND $form->get('agent')){
+   
 		$fieldlist=array('bookingAgentFirstName', 'bookingAgentLastName', 'bookingAgentEmail', 'bookingAgentPhone');
+     
 		foreach($fieldlist as $field){
 	       if ( ! trim(CRM_Utils_Array::value( $field, $fields )) ) {
 	          $errors[$field] = ts( 'This is a required field' );
@@ -149,9 +154,10 @@ function fend_event_civicrm_postProcess( $formName, &$form ){
 }
 
 function fend_event_civicrm_buildAmount( $pageType, &$form, &$amount ){
-	if($pageType!='event'){
+    if($pageType!='event'){
 		return;
-	}
+     
+    }
 	if($GLOBALS['_GET']['agent'] OR $form->get('agent')){
 		$group_booking=TRUE;
 	}
@@ -159,11 +165,22 @@ function fend_event_civicrm_buildAmount( $pageType, &$form, &$amount ){
 	$current_member=FALSE;
 	$membership=fend_membership_get();
 	if($membership){
-		$end_date = new DateTime($membership['end_date']);
-		$now = new DateTime();
-		if($end_date>$now){
+$fileFieldid = CRM_Core_BAO_CustomField::getCustomFieldID( 'Active_Date_of_Memmbership' );
+    $customParams = array(
+                          'entityID'             => 10,
+                          'custom_'.$fileFieldid => 1
+                          );
+    require_once 'CRM/Core/BAO/CustomValueTable.php';
+    $customValue = CRM_Core_BAO_CustomValueTable::getValues( $customParams );
+    $date=new DateTime($customValue['custom_'.$fileFieldid]);
+		$end_date = new DateTime($membership['membership_end_date']);
+       
+        $start_date = new DateTime($membership['membership_start_date']);
+                     
+		if($end_date >= $date && $start_date <= $date){
 			$current_member=TRUE;
-		}
+         }
+       
 	}
 	foreach($amount as $key => $option){
 		if($option['weight']==1){
