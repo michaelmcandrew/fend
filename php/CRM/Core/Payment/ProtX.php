@@ -490,7 +490,7 @@ echo "</pre>";*/
                  );*/
 		##### end ################### commented by jyoti : 26may10 ####################
 		
-		$country_id = $params['country-Primary'];
+		$country_id = $params['country-5'];
 		$country_sql = "SELECT * FROM civicrm_country WHERE id = '$country_id'";
 		$country_dao = CRM_Core_DAO::executeQuery( $country_sql );
 		$country_dao->fetch();
